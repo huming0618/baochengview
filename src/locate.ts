@@ -23,16 +23,21 @@ function isPermissionGranted(status: PermissionStatus): boolean {
 }
 
 async function ensurePermission(): Promise<boolean> {
-  if (Capacitor.isNativePlatform()) {
-    let status = await Geolocation.checkPermissions()
-    if (!isPermissionGranted(status)) {
-      status = await Geolocation.requestPermissions()
+  try {
+    if (Capacitor.isNativePlatform()) {
+      let status = await Geolocation.checkPermissions()
+      if (!isPermissionGranted(status)) {
+        status = await Geolocation.requestPermissions()
+      }
+      return isPermissionGranted(status)
     }
-    return isPermissionGranted(status)
+    // Browser: prompt happens on first getCurrentPosition / watchPosition
+    if (!('geolocation' in navigator)) return false
+    return true
+  } catch (e) {
+    console.error('[Locate] Permission check/request failed:', e)
+    throw e
   }
-  // Browser: prompt happens on first getCurrentPosition / watchPosition
-  if (!('geolocation' in navigator)) return false
-  return true
 }
 
 function permissionDeniedMessage(err?: GeolocationPositionError | Error | null): string {
@@ -162,7 +167,17 @@ export function createLocateControl(
 
   async function startWatch() {
     setState('locating')
-    const ok = await ensurePermission()
+    
+    let ok = false
+    try {
+      ok = await ensurePermission()
+    } catch (e) {
+      console.error('[Locate] ensurePermission failed:', e)
+      opts.toast('定位权限检查失败')
+      setState('idle')
+      return
+    }
+    
     if (!ok) {
       opts.toast('请允许位置权限后重试')
       setState('idle')
@@ -199,6 +214,7 @@ export function createLocateControl(
         )
       }
     } catch (e) {
+      console.error('[Locate] watchPosition failed:', e)
       onError(e instanceof Error ? e : null)
     }
   }
@@ -236,23 +252,29 @@ export function createLocateControl(
   }
 
   async function toggle() {
-    if (state === 'idle') {
-      await startWatch()
-      return
+    try {
+      if (state === 'idle') {
+        await startWatch()
+        return
+      }
+      if (state === 'locating') {
+        // ignore double-taps while locating
+        return
+      }
+      if (state === 'following') {
+        follow = false
+        setState('located')
+        return
+      }
+      // located → resume follow
+      follow = true
+      setState('following')
+      centerOnUser()
+    } catch (e) {
+      console.error('[Locate] toggle error:', e)
+      opts.toast('定位功能出错')
+      setState('idle')
     }
-    if (state === 'locating') {
-      // ignore double-taps while locating
-      return
-    }
-    if (state === 'following') {
-      follow = false
-      setState('located')
-      return
-    }
-    // located → resume follow
-    follow = true
-    setState('following')
-    centerOnUser()
   }
 
   const onUserMove = () => {

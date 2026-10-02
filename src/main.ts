@@ -433,14 +433,18 @@ function setupControls() {
     onPosition: applyLocationToScale,
   })
   locateBtn.addEventListener('click', () => {
-    void locateCtrl!.toggle()
+    locateCtrl!.toggle().catch((e) => {
+      console.error('[Main] Locate toggle failed:', e)
+    })
   })
 
   // Scale prompt button delegates to locate
   document.getElementById('scale-view')!.addEventListener('click', (e) => {
     const t = e.target as HTMLElement
     if (t.id === 'scale-locate-prompt' || t.closest('#scale-locate-prompt')) {
-      void locateCtrl!.toggle()
+      locateCtrl!.toggle().catch((err) => {
+        console.error('[Main] Scale locate toggle failed:', err)
+      })
     }
   })
 }
