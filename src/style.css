@@ -111,11 +111,32 @@ html, body {
   transition: filter 0.2s;
 }
 
-.location-status-text {
+.location-status-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.location-status-coords {
+  font-size: 12px;
+  font-family: 'SF Mono', 'Monaco', 'Menlo', monospace;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 260px;
+  color: var(--text-primary);
+}
+
+.location-status-corridor {
+  font-size: 11px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.location-status.has-location .location-status-corridor {
+  color: #6cb8ff;
 }
 
 .search-container {
@@ -343,7 +364,8 @@ html, body {
     max-width: 360px;
   }
   
-  .location-status-text {
+  .location-status-coords,
+  .location-status-corridor {
     max-width: 400px;
   }
 }

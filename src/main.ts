@@ -70,7 +70,10 @@ app.innerHTML = `
       </div>
       <div id="location-status" class="location-status">
         <span class="location-status-icon">📍</span>
-        <span id="location-status-text" class="location-status-text">未定位</span>
+        <div class="location-status-content">
+          <span id="location-status-coords" class="location-status-coords">未定位</span>
+          <span id="location-status-corridor" class="location-status-corridor"></span>
+        </div>
       </div>
     </header>
     <div id="map"></div>
@@ -168,31 +171,39 @@ let currentView: AppView = 'map'
 let locateCtrl: ReturnType<typeof createLocateControl> | null = null
 
 const scaleView = createScaleView(document.getElementById('scale-view')!)
-const locationStatusText = document.getElementById('location-status-text')!
+const locationStatusCoords = document.getElementById('location-status-coords')!
+const locationStatusCorridor = document.getElementById('location-status-corridor')!
 const locationStatusEl = document.getElementById('location-status')!
 
+function formatTime(): string {
+  const now = new Date()
+  return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`
+}
+
 function updateLocationStatus(proj: LineProjection | null, pos: LocatePosition | null) {
-  if (!proj) {
-    if (pos) {
-      // Have position but not on corridor - show coordinates
-      locationStatusText.textContent = `${pos.lat.toFixed(4)}°N, ${pos.lng.toFixed(4)}°E`
-      locationStatusEl.classList.add('has-location')
-      locationStatusEl.classList.remove('off-corridor')
-      locationStatusEl.classList.add('off-corridor')
-    } else {
-      locationStatusText.textContent = '未定位'
-      locationStatusEl.classList.remove('has-location', 'off-corridor')
-    }
+  if (!pos) {
+    locationStatusCoords.textContent = '未定位'
+    locationStatusCorridor.textContent = ''
+    locationStatusEl.classList.remove('has-location', 'off-corridor')
     return
   }
   
+  // Always show coords + timestamp as primary line
+  const timestamp = formatTime()
+  locationStatusCoords.textContent = `${pos.lat.toFixed(5)}°N, ${pos.lng.toFixed(5)}°E · ${timestamp}`
   locationStatusEl.classList.add('has-location')
-  locationStatusEl.classList.remove('off-corridor')
   
-  if (proj.atStation) {
-    locationStatusText.textContent = `你在 ${proj.atStation.name} 附近`
+  // Show corridor info as secondary line
+  if (!proj) {
+    locationStatusCorridor.textContent = '(偏离线路)'
+    locationStatusEl.classList.add('off-corridor')
   } else {
-    locationStatusText.textContent = `你在 ${proj.prev.name} ↔ ${proj.next.name} 之间`
+    locationStatusEl.classList.remove('off-corridor')
+    if (proj.atStation) {
+      locationStatusCorridor.textContent = `你在 ${proj.atStation.name} 附近`
+    } else {
+      locationStatusCorridor.textContent = `你在 ${proj.prev.name} ↔ ${proj.next.name} 之间`
+    }
   }
 }
 

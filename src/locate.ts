@@ -68,6 +68,8 @@ export function createLocateControl(
   let lastAccuracy = 0
   let locateTimeoutId: ReturnType<typeof setTimeout> | null = null
   let abortLocating = false
+  let pollIntervalId: ReturnType<typeof setInterval> | null = null
+  const POLL_INTERVAL_MS = 2500
 
   const userIcon = L.divIcon({
     className: 'user-location-marker',
@@ -163,6 +165,7 @@ export function createLocateControl(
     setState('following')
     centerOnUser()
     startWatchForFollow()
+    startPolling()
   }
 
   function onWatchPosition(lat: number, lng: number, accuracy: number) {
@@ -281,6 +284,52 @@ export function createLocateControl(
     }
   }
 
+  function stopPolling() {
+    if (pollIntervalId !== null) {
+      clearInterval(pollIntervalId)
+      pollIntervalId = null
+      console.log('[Locate] Polling stopped')
+    }
+  }
+
+  async function pollPosition() {
+    if (state !== 'following' && state !== 'located') {
+      stopPolling()
+      return
+    }
+    
+    try {
+      if (Capacitor.isNativePlatform()) {
+        const pos = await Geolocation.getCurrentPosition({
+          enableHighAccuracy: true,
+          timeout: 5000,
+          maximumAge: 0,
+        })
+        console.log('[Locate] Poll update:', pos.coords.latitude, pos.coords.longitude)
+        onWatchPosition(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy ?? 0)
+      } else {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            console.log('[Locate] Poll update:', pos.coords.latitude, pos.coords.longitude)
+            onWatchPosition(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy ?? 0)
+          },
+          (err) => console.warn('[Locate] Poll error:', err),
+          { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+        )
+      }
+    } catch (e) {
+      console.warn('[Locate] Poll getCurrentPosition error:', e)
+    }
+  }
+
+  function startPolling() {
+    if (pollIntervalId !== null) return
+    console.log('[Locate] Starting position polling every', POLL_INTERVAL_MS, 'ms')
+    pollIntervalId = setInterval(() => {
+      pollPosition().catch((e) => console.warn('[Locate] Poll error:', e))
+    }, POLL_INTERVAL_MS)
+  }
+
   async function startLocate() {
     abortLocating = false
     setState('locating')
@@ -329,6 +378,7 @@ export function createLocateControl(
 
   function stopWatch() {
     clearLocateTimeout()
+    stopPolling()
     if (watchId != null) {
       if (Capacitor.isNativePlatform() && typeof watchId === 'string') {
         Geolocation.clearWatch({ id: watchId }).catch(() => {})
