@@ -4,8 +4,15 @@ import { Geolocation, type PermissionStatus } from '@capacitor/geolocation'
 
 export type LocateState = 'idle' | 'locating' | 'following' | 'located'
 
+export interface LocatePosition {
+  lat: number
+  lng: number
+  accuracy: number
+}
+
 export interface LocateController {
   getState: () => LocateState
+  getLastPosition: () => LocatePosition | null
   toggle: () => Promise<void>
   stop: () => void
   destroy: () => void
@@ -40,6 +47,7 @@ export function createLocateControl(
     button: HTMLButtonElement
     label: HTMLElement
     toast: (msg: string) => void
+    onPosition?: (pos: LocatePosition | null) => void
   }
 ): LocateController {
   let state: LocateState = 'idle'
@@ -49,6 +57,7 @@ export function createLocateControl(
   let follow = false
   let programmaticMove = false
   let lastLatLng: L.LatLng | null = null
+  let lastAccuracy = 0
 
   const userIcon = L.divIcon({
     className: 'user-location-marker',
@@ -56,6 +65,19 @@ export function createLocateControl(
     iconSize: [22, 22],
     iconAnchor: [11, 11],
   })
+
+  function emitPosition() {
+    if (!opts.onPosition) return
+    if (!lastLatLng) {
+      opts.onPosition(null)
+      return
+    }
+    opts.onPosition({
+      lat: lastLatLng.lat,
+      lng: lastLatLng.lng,
+      accuracy: lastAccuracy,
+    })
+  }
 
   function setState(next: LocateState) {
     state = next
@@ -80,6 +102,7 @@ export function createLocateControl(
   function updateMarker(lat: number, lng: number, accuracy: number) {
     const latlng = L.latLng(lat, lng)
     lastLatLng = latlng
+    lastAccuracy = accuracy
     if (!marker) {
       marker = L.marker(latlng, { icon: userIcon, zIndexOffset: 1000, interactive: false }).addTo(map)
     } else {
@@ -99,6 +122,7 @@ export function createLocateControl(
       accuracyCircle.setLatLng(latlng)
       accuracyCircle.setRadius(Math.max(accuracy || 0, 8))
     }
+    emitPosition()
   }
 
   function centerOnUser(zoom?: number) {
@@ -201,6 +225,8 @@ export function createLocateControl(
       accuracyCircle = null
     }
     lastLatLng = null
+    lastAccuracy = 0
+    emitPosition()
   }
 
   function stop() {
@@ -242,6 +268,10 @@ export function createLocateControl(
 
   return {
     getState: () => state,
+    getLastPosition: () =>
+      lastLatLng
+        ? { lat: lastLatLng.lat, lng: lastLatLng.lng, accuracy: lastAccuracy }
+        : null,
     toggle,
     stop,
     destroy: () => {

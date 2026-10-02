@@ -439,3 +439,373 @@ html, body {
 .toast {
   font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif;
 }
+
+/* View toggle: 地图 ↔ 站序 */
+.view-toggle {
+  display: flex;
+  flex-shrink: 0;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--bg-surface);
+  box-shadow: var(--shadow);
+}
+
+.view-toggle-btn {
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 13px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.view-toggle-btn.active {
+  background: var(--accent);
+  color: #1a1a2e;
+  font-weight: 600;
+}
+
+.view-toggle-btn:not(.active):hover {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+}
+
+#fit-line-btn.hidden {
+  display: none;
+}
+
+#map.hidden-view {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* Scale / ruler view */
+.scale-view {
+  position: absolute;
+  inset: 0;
+  z-index: 500;
+  background: var(--bg-dark);
+  display: flex;
+  flex-direction: column;
+  padding-top: 64px;
+  padding-bottom: 72px;
+}
+
+.scale-view.hidden {
+  display: none;
+}
+
+.scale-shell {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 0 12px 8px;
+}
+
+.scale-status {
+  flex-shrink: 0;
+  margin: 0 0 10px;
+  padding: 12px 14px;
+  background: var(--bg-surface);
+  border-radius: var(--radius);
+  border: 1px solid rgba(255, 215, 0, 0.25);
+  box-shadow: var(--shadow);
+}
+
+.scale-status-main {
+  font-size: 15px;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+.scale-status-main strong {
+  color: var(--accent);
+}
+
+.scale-status-sub {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.scale-locate-prompt {
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: #2A93EE;
+  font-family: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+  padding: 0;
+}
+
+.scale-locate-prompt:hover {
+  color: #5bb0f5;
+  text-decoration: underline;
+}
+
+.scale-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: var(--radius);
+  background: var(--bg-surface);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.scale-track {
+  position: relative;
+  margin: 0;
+  min-height: 100%;
+}
+
+.scale-plot {
+  position: absolute;
+  inset: 20px 12px;
+}
+
+.scale-rail {
+  position: absolute;
+  background: rgba(255, 215, 0, 0.35);
+  border-radius: 2px;
+  z-index: 1;
+}
+
+.scale-highlight {
+  position: absolute;
+  background: rgba(42, 147, 238, 0.35);
+  border-radius: 3px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.scale-highlight.hidden {
+  display: none;
+}
+
+.scale-ticks {
+  position: relative;
+  z-index: 3;
+  width: 100%;
+  height: 100%;
+}
+
+.scale-tick {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transform: translateY(-50%);
+  left: 0;
+  right: 0;
+  padding-left: 28px;
+}
+
+.scale-tick-mark {
+  position: absolute;
+  left: 0;
+  width: 14px;
+  height: 2px;
+  background: var(--accent);
+  border-radius: 1px;
+}
+
+.scale-tick.endpoint .scale-tick-mark {
+  width: 18px;
+  height: 3px;
+  background: #fff;
+}
+
+.scale-tick.seg-end .scale-tick-name {
+  color: #2A93EE;
+  font-weight: 600;
+}
+
+.scale-tick.at-me .scale-tick-name {
+  color: #2A93EE;
+  font-weight: 700;
+}
+
+.scale-tick-name {
+  font-size: 14px;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.scale-tick-km {
+  font-size: 11px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.scale-me {
+  position: absolute;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transform: translate(-4px, -50%);
+  left: 0;
+  pointer-events: none;
+}
+
+.scale-me.hidden {
+  display: none;
+}
+
+.scale-me-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #2A93EE;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 3px rgba(42, 147, 238, 0.35);
+  flex-shrink: 0;
+}
+
+.scale-me-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #2A93EE;
+  background: rgba(26, 26, 46, 0.9);
+  padding: 2px 6px;
+  border-radius: 10px;
+  border: 1px solid rgba(42, 147, 238, 0.5);
+}
+
+.scale-ends {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+  padding: 0 4px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.scale-end-mid {
+  color: var(--accent);
+  opacity: 0.8;
+}
+
+/* Vertical orientation (default) */
+.scale-vertical .scale-rail {
+  top: 0;
+  bottom: 0;
+  left: 5px;
+  width: 4px;
+}
+
+.scale-vertical .scale-highlight {
+  left: 2px;
+  width: 10px;
+}
+
+/* Horizontal orientation (landscape short height) */
+.scale-horizontal .scale-shell {
+  padding-bottom: 4px;
+}
+
+.scale-horizontal .scale-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.scale-horizontal .scale-track {
+  height: 160px;
+  margin: 0;
+}
+.scale-horizontal .scale-plot {
+  inset: 16px 28px;
+}
+
+.scale-horizontal .scale-rail {
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 4px;
+  margin-top: -2px;
+}
+
+.scale-horizontal .scale-highlight {
+  top: calc(50% - 5px);
+  height: 10px;
+}
+
+.scale-horizontal .scale-tick {
+  top: 50%;
+  left: auto;
+  right: auto;
+  bottom: auto;
+  transform: translate(-50%, 0);
+  flex-direction: column;
+  align-items: center;
+  padding-left: 0;
+  padding-top: 18px;
+  width: 64px;
+  text-align: center;
+}
+
+.scale-horizontal .scale-tick-mark {
+  left: 50%;
+  top: 0;
+  transform: translateX(-50%);
+  width: 2px;
+  height: 14px;
+}
+
+.scale-horizontal .scale-tick.endpoint .scale-tick-mark {
+  width: 3px;
+  height: 18px;
+}
+
+.scale-horizontal .scale-tick-name {
+  font-size: 12px;
+}
+
+.scale-horizontal .scale-me {
+  top: 50%;
+  left: auto;
+  transform: translate(-50%, -120%);
+  flex-direction: column;
+}
+
+.scale-view,
+.view-toggle,
+.view-toggle-btn,
+.scale-status,
+.scale-tick-name,
+.scale-me-label {
+  font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif;
+}
+
+@media (min-width: 600px) {
+  .scale-view {
+    padding-top: 72px;
+  }
+  .scale-shell {
+    max-width: 480px;
+    margin: 0 auto;
+    width: 100%;
+  }
+  .scale-horizontal .scale-shell {
+    max-width: none;
+  }
+}
+
+/* When scale view is active, tuck locate button above bottom safe area */
+#map-container[data-view="scale"] .locate-btn {
+  bottom: 16px;
+}
+
+#map-container[data-view="scale"] .leaflet-control-zoom,
+#map-container[data-view="scale"] .leaflet-control-attribution {
+  display: none !important;
+}

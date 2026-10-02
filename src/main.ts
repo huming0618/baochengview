@@ -8,7 +8,14 @@ import {
   isOnline,
   resolveAssetUrl,
 } from './tileCache.ts'
-import { createLocateControl } from './locate.ts'
+import { createLocateControl, type LocatePosition } from './locate.ts'
+import {
+  buildCorridor,
+  flattenLineCoords,
+  projectOntoCorridor,
+  type CorridorStation,
+} from './geo.ts'
+import { createScaleView } from './scaleView.ts'
 
 interface StationProperties {
   name: string
@@ -38,6 +45,8 @@ interface GeoJSONData {
   features: GeoJSONFeature[]
 }
 
+type AppView = 'map' | 'scale'
+
 const app = document.querySelector<HTMLDivElement>('#app')!
 app.innerHTML = `
   <div id="map-container">
@@ -45,6 +54,10 @@ app.innerHTML = `
       <div class="search-container">
         <input type="text" id="search-input" placeholder="搜索车站..." autocomplete="off" />
         <div id="search-results"></div>
+      </div>
+      <div class="view-toggle" role="group" aria-label="视图切换">
+        <button type="button" id="view-map-btn" class="view-toggle-btn active" aria-pressed="true">地图</button>
+        <button type="button" id="view-scale-btn" class="view-toggle-btn" aria-pressed="false">站序</button>
       </div>
       <button id="fit-line-btn" title="显示全线">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -54,6 +67,7 @@ app.innerHTML = `
       </button>
     </header>
     <div id="map"></div>
+    <div id="scale-view" class="scale-view hidden" aria-label="宝成线站序刻度"></div>
     <button id="locate-btn" class="locate-btn" title="定位 / 跟随我" type="button" aria-pressed="false">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
         <circle cx="12" cy="12" r="3"/>
@@ -141,6 +155,27 @@ let lineLayer: L.GeoJSON | null = null
 let stationMarkers: Map<string, L.Marker> = new Map()
 let selectedStation: string | null = null
 let stations: { name: string; lat: number; lon: number; order: number }[] = []
+let corridor: CorridorStation[] = []
+let lineSegs: { a: { lat: number; lon: number }; b: { lat: number; lon: number } }[] = []
+let currentView: AppView = 'map'
+let locateCtrl: ReturnType<typeof createLocateControl> | null = null
+
+const scaleView = createScaleView(document.getElementById('scale-view')!)
+
+function applyLocationToScale(pos: LocatePosition | null) {
+  if (!pos || corridor.length < 2 || lineSegs.length === 0) {
+    scaleView.setHasLocation(false)
+    scaleView.setProjection(null)
+    return
+  }
+  const proj = projectOntoCorridor(
+    { lat: pos.lat, lon: pos.lng },
+    corridor,
+    lineSegs
+  )
+  scaleView.setHasLocation(true)
+  scaleView.setProjection(proj)
+}
 
 async function loadData() {
   try {
@@ -153,6 +188,13 @@ async function loadData() {
     lineLayer = L.geoJSON(lineFeatures as any, {
       style: lineStyle
     }).addTo(map)
+
+    // Flatten all MultiLineString parts for nearest-segment projection
+    lineSegs = []
+    for (const f of lineFeatures) {
+      const coords = f.geometry.coordinates as [number, number][][]
+      lineSegs.push(...flattenLineCoords(coords))
+    }
     
     stationFeatures.forEach(feature => {
       const props = feature.properties as StationProperties
@@ -174,10 +216,17 @@ async function loadData() {
     })
     
     stations.sort((a, b) => a.order - b.order)
+    corridor = buildCorridor(stations)
+    scaleView.setCorridor(corridor)
     
     fitToLine()
     
     handleDeepLink()
+
+    // If locate already has a fix, paint scale
+    if (locateCtrl) {
+      applyLocationToScale(locateCtrl.getLastPosition())
+    }
   } catch (error) {
     console.error('加载数据失败:', error)
   }
@@ -191,6 +240,10 @@ function fitToLine() {
 }
 
 function selectStation(name: string) {
+  if (currentView !== 'map') {
+    setView('map')
+  }
+
   if (selectedStation) {
     const prevMarker = stationMarkers.get(selectedStation)
     if (prevMarker) {
@@ -219,7 +272,9 @@ function showPopup(station: { name: string; lat: number; lon: number; order: num
   const detail = popup.querySelector('.popup-detail')!
   
   title.textContent = station.name
-  detail.textContent = `宝成线第 ${station.order} 站`
+  const cs = corridor.find(s => s.name === station.name)
+  const kmBit = cs ? ` · 沿线约 ${cs.km < 10 ? cs.km.toFixed(1) : Math.round(cs.km)} km` : ''
+  detail.textContent = `宝成线第 ${station.order} 站${kmBit}`
   
   popup.classList.remove('hidden')
 }
@@ -331,6 +386,33 @@ function showToast(msg: string) {
   }, 3200)
 }
 
+function setView(view: AppView) {
+  currentView = view
+  const mapBtn = document.getElementById('view-map-btn')!
+  const scaleBtn = document.getElementById('view-scale-btn')!
+  const fitBtn = document.getElementById('fit-line-btn')!
+  const mapEl = document.getElementById('map')!
+  const isMap = view === 'map'
+
+  mapBtn.classList.toggle('active', isMap)
+  scaleBtn.classList.toggle('active', !isMap)
+  mapBtn.setAttribute('aria-pressed', isMap ? 'true' : 'false')
+  scaleBtn.setAttribute('aria-pressed', isMap ? 'false' : 'true')
+
+  mapEl.classList.toggle('hidden-view', !isMap)
+  scaleView.setVisible(!isMap)
+  fitBtn.classList.toggle('hidden', !isMap)
+
+  // Keep Leaflet sizing correct when returning to map
+  if (isMap) {
+    requestAnimationFrame(() => map.invalidateSize())
+  } else {
+    hidePopup()
+  }
+
+  document.getElementById('map-container')!.dataset.view = view
+}
+
 function setupControls() {
   document.getElementById('fit-line-btn')!.addEventListener('click', () => {
     fitToLine()
@@ -339,15 +421,27 @@ function setupControls() {
   
   document.querySelector('.popup-close')!.addEventListener('click', hidePopup)
 
+  document.getElementById('view-map-btn')!.addEventListener('click', () => setView('map'))
+  document.getElementById('view-scale-btn')!.addEventListener('click', () => setView('scale'))
+
   const locateBtn = document.getElementById('locate-btn') as HTMLButtonElement
   const locateLabel = document.getElementById('locate-label')!
-  const locate = createLocateControl(map, {
+  locateCtrl = createLocateControl(map, {
     button: locateBtn,
     label: locateLabel,
     toast: showToast,
+    onPosition: applyLocationToScale,
   })
   locateBtn.addEventListener('click', () => {
-    void locate.toggle()
+    void locateCtrl!.toggle()
+  })
+
+  // Scale prompt button delegates to locate
+  document.getElementById('scale-view')!.addEventListener('click', (e) => {
+    const t = e.target as HTMLElement
+    if (t.id === 'scale-locate-prompt' || t.closest('#scale-locate-prompt')) {
+      void locateCtrl!.toggle()
+    }
   })
 }
 

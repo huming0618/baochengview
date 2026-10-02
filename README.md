@@ -11,6 +11,7 @@
 - 🔗 深度链接支持（如 `?q=江油` 或 `#广元`）
 - 🈶 内置中文字体子集（Android WebView 无系统 CJK 时仍可显示）
 - 📍 实时定位 / 跟随（蓝点 + 精度圈；首次点击「定位」时请求权限）
+- 📏 站序/刻度视图：沿线车站按里程排列，GPS 投影到线路后显示「你在 X ↔ Y 之间」
 
 ## 运行
 
@@ -43,7 +44,7 @@ cd android && ./gradlew assembleDebug
 - App ID: `com.huming.baochengview`
 - 应用名: 宝成慢车
 - 瓦片加载顺序: 内置 offline-tiles → Cache API → 在线 Carto dark_all → OSM（已移除 Esri）
-- 发布包: [android-offline-v4](https://github.com/huming0618/baochengview/releases/tag/android-offline-v4)（实时定位）
+- 发布包: [android-offline-v5](https://github.com/huming0618/baochengview/releases/tag/android-offline-v5)（站序刻度 + 定位）
 - 内置 Noto Sans SC 子集字体，修复部分 Android WebView 中文显示为 □（tofu）
 
 ## 数据来源
