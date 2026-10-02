@@ -882,3 +882,212 @@ html, body {
 #map-container[data-view="scale"] .leaflet-control-attribution {
   display: none !important;
 }
+
+/* Elevation profile view */
+.elevation-view {
+  position: absolute;
+  inset: 0;
+  z-index: 500;
+  background: var(--bg-dark);
+  display: flex;
+  flex-direction: column;
+  padding-top: 64px;
+  padding-bottom: 72px;
+}
+
+.elevation-view.hidden {
+  display: none;
+}
+
+.elev-shell {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 0 12px 8px;
+}
+
+.elev-status {
+  flex-shrink: 0;
+  margin: 0 0 10px;
+  padding: 12px 14px;
+  background: var(--bg-surface);
+  border-radius: var(--radius);
+  border: 1px solid rgba(255, 215, 0, 0.25);
+  box-shadow: var(--shadow);
+}
+
+.elev-status-main {
+  font-size: 15px;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+.elev-status-main strong {
+  color: var(--accent);
+}
+
+.elev-status-sub {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.elev-locate-prompt {
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: #2A93EE;
+  font-family: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+  padding: 0;
+}
+
+.elev-locate-prompt:hover {
+  color: #5bb0f5;
+  text-decoration: underline;
+}
+
+.elev-loading {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.elev-chart-container {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  gap: 8px;
+  background: var(--bg-surface);
+  border-radius: var(--radius);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 12px;
+  position: relative;
+}
+
+.elev-chart {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+  height: 100%;
+}
+
+#elev-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.elev-axis-y {
+  flex-shrink: 0;
+  width: 48px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.elev-tick-y {
+  position: absolute;
+  right: 0;
+  transform: translateY(-50%);
+  font-size: 10px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.elev-axis-x {
+  flex-shrink: 0;
+  height: 24px;
+  margin-top: 4px;
+  padding: 0 12px 0 60px;
+  position: relative;
+}
+
+.elev-tick-x {
+  position: absolute;
+  transform: translateX(-50%);
+  font-size: 10px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.elev-me {
+  position: absolute;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.elev-me.hidden {
+  display: none;
+}
+
+.elev-me-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #2A93EE;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 3px rgba(42, 147, 238, 0.35);
+  flex-shrink: 0;
+}
+
+.elev-me-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #2A93EE;
+  background: rgba(26, 26, 46, 0.9);
+  padding: 2px 6px;
+  border-radius: 8px;
+  border: 1px solid rgba(42, 147, 238, 0.5);
+}
+
+.elev-ends {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+  padding: 0 4px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.elev-end-mid {
+  color: var(--accent);
+  opacity: 0.8;
+}
+
+.elevation-view,
+.elev-status,
+.elev-me-label,
+.elev-locate-prompt {
+  font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif;
+}
+
+@media (min-width: 600px) {
+  .elevation-view {
+    padding-top: 72px;
+  }
+  .elev-shell {
+    max-width: 640px;
+    margin: 0 auto;
+    width: 100%;
+  }
+}
+
+#map-container[data-view="elevation"] .locate-btn {
+  bottom: 16px;
+}
+
+#map-container[data-view="elevation"] .leaflet-control-zoom,
+#map-container[data-view="elevation"] .leaflet-control-attribution {
+  display: none !important;
+}

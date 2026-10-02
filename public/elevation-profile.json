@@ -1,0 +1,771 @@
+{
+  "source": "Open-Meteo Elevation API (SRTM 90m)",
+  "generated": "2026-10-02T21:55:20.616Z",
+  "summary": {
+    "totalKm": 545.7,
+    "minElevation": 468,
+    "maxElevation": 1580,
+    "stationCount": 32,
+    "profilePoints": 125
+  },
+  "stations": [
+    {
+      "name": "宝鸡",
+      "order": 1,
+      "km": 0,
+      "lat": 34.3614,
+      "lon": 107.1826,
+      "elevation": 578
+    },
+    {
+      "name": "秦岭",
+      "order": 2,
+      "km": 29.4,
+      "lat": 34.2350994,
+      "lon": 106.9011936,
+      "elevation": 1385
+    },
+    {
+      "name": "红花铺",
+      "order": 3,
+      "km": 47.5,
+      "lat": 34.1305888,
+      "lon": 106.7501484,
+      "elevation": 1185
+    },
+    {
+      "name": "凤州",
+      "order": 4,
+      "km": 67.4,
+      "lat": 33.97154,
+      "lon": 106.650962,
+      "elevation": 1040
+    },
+    {
+      "name": "凤县",
+      "order": 5,
+      "km": 82.9,
+      "lat": 33.9068608,
+      "lon": 106.5030134,
+      "elevation": 953
+    },
+    {
+      "name": "宏庆",
+      "order": 6,
+      "km": 93,
+      "lat": 33.8444259,
+      "lon": 106.4232236,
+      "elevation": 898
+    },
+    {
+      "name": "李家河",
+      "order": 7,
+      "km": 97.2,
+      "lat": 33.8151019,
+      "lon": 106.3939422,
+      "elevation": 869
+    },
+    {
+      "name": "王家沱",
+      "order": 8,
+      "km": 106.4,
+      "lat": 33.7766713,
+      "lon": 106.3066778,
+      "elevation": 822
+    },
+    {
+      "name": "徽县",
+      "order": 9,
+      "km": 119.4,
+      "lat": 33.7019302,
+      "lon": 106.1972147,
+      "elevation": 771
+    },
+    {
+      "name": "白水江",
+      "order": 10,
+      "km": 137.3,
+      "lat": 33.5754243,
+      "lon": 106.0783516,
+      "elevation": 730
+    },
+    {
+      "name": "红卫坝",
+      "order": 11,
+      "km": 144.4,
+      "lat": 33.5240846,
+      "lon": 106.0326327,
+      "elevation": 699
+    },
+    {
+      "name": "马蹄湾",
+      "order": 12,
+      "km": 150.3,
+      "lat": 33.4712294,
+      "lon": 106.0385002,
+      "elevation": 704
+    },
+    {
+      "name": "徐家坪",
+      "order": 13,
+      "km": 157.9,
+      "lat": 33.4040663,
+      "lon": 106.0491083,
+      "elevation": 683
+    },
+    {
+      "name": "横现河",
+      "order": 14,
+      "km": 164.8,
+      "lat": 33.3462423,
+      "lon": 106.078244,
+      "elevation": 674
+    },
+    {
+      "name": "略阳",
+      "order": 15,
+      "km": 170.9,
+      "lat": 33.3328393,
+      "lon": 106.1419121,
+      "elevation": 654
+    },
+    {
+      "name": "乐素河",
+      "order": 16,
+      "km": 188.8,
+      "lat": 33.1933751,
+      "lon": 106.0466534,
+      "elevation": 610
+    },
+    {
+      "name": "高潭子",
+      "order": 17,
+      "km": 196.4,
+      "lat": 33.12455,
+      "lon": 106.04206,
+      "elevation": 632
+    },
+    {
+      "name": "巨亭",
+      "order": 18,
+      "km": 205,
+      "lat": 33.0565206,
+      "lon": 106.0839272,
+      "elevation": 659
+    },
+    {
+      "name": "阳平关",
+      "order": 19,
+      "km": 215.8,
+      "lat": 32.9684936,
+      "lon": 106.0336066,
+      "elevation": 583
+    },
+    {
+      "name": "燕子砭",
+      "order": 20,
+      "km": 226.2,
+      "lat": 32.9186,
+      "lon": 105.94013,
+      "elevation": 554
+    },
+    {
+      "name": "大滩",
+      "order": 21,
+      "km": 240.9,
+      "lat": 32.78719,
+      "lon": 105.91949,
+      "elevation": 542
+    },
+    {
+      "name": "朝天南",
+      "order": 22,
+      "km": 257.7,
+      "lat": 32.6403574,
+      "lon": 105.8750232,
+      "elevation": 530
+    },
+    {
+      "name": "冉家河",
+      "order": 23,
+      "km": 270.9,
+      "lat": 32.525955,
+      "lon": 105.839446,
+      "elevation": 493
+    },
+    {
+      "name": "广元",
+      "order": 24,
+      "km": 279.3,
+      "lat": 32.4526584,
+      "lon": 105.8179671,
+      "elevation": 484
+    },
+    {
+      "name": "昭化",
+      "order": 25,
+      "km": 297.7,
+      "lat": 32.386752,
+      "lon": 105.638098,
+      "elevation": 498
+    },
+    {
+      "name": "沙溪坝",
+      "order": 26,
+      "km": 314.3,
+      "lat": 32.2873928,
+      "lon": 105.5068028,
+      "elevation": 510
+    },
+    {
+      "name": "马角坝",
+      "order": 27,
+      "km": 360.2,
+      "lat": 32.0876449,
+      "lon": 105.0796546,
+      "elevation": 647
+    },
+    {
+      "name": "江油",
+      "order": 28,
+      "km": 405,
+      "lat": 31.783437,
+      "lon": 104.767541,
+      "elevation": 537
+    },
+    {
+      "name": "绵阳",
+      "order": 29,
+      "km": 441.1,
+      "lat": 31.4621298,
+      "lon": 104.714631,
+      "elevation": 468
+    },
+    {
+      "name": "德阳",
+      "order": 30,
+      "km": 486.3,
+      "lat": 31.1683508,
+      "lon": 104.3864117,
+      "elevation": 502
+    },
+    {
+      "name": "广汉",
+      "order": 31,
+      "km": 510.5,
+      "lat": 30.9792851,
+      "lon": 104.2603839,
+      "elevation": 480
+    },
+    {
+      "name": "成都",
+      "order": 32,
+      "km": 545.7,
+      "lat": 30.7061,
+      "lon": 104.0738,
+      "elevation": 510
+    }
+  ],
+  "profile": [
+    {
+      "km": 0,
+      "elevation": 578
+    },
+    {
+      "km": 7.4,
+      "elevation": 689
+    },
+    {
+      "km": 14.7,
+      "elevation": 1178
+    },
+    {
+      "km": 22,
+      "elevation": 1245
+    },
+    {
+      "km": 29.4,
+      "elevation": 1385
+    },
+    {
+      "km": 33.9,
+      "elevation": 1580
+    },
+    {
+      "km": 38.5,
+      "elevation": 1508
+    },
+    {
+      "km": 43,
+      "elevation": 1421
+    },
+    {
+      "km": 47.5,
+      "elevation": 1185
+    },
+    {
+      "km": 52.5,
+      "elevation": 1190
+    },
+    {
+      "km": 57.5,
+      "elevation": 1400
+    },
+    {
+      "km": 62.4,
+      "elevation": 1333
+    },
+    {
+      "km": 67.4,
+      "elevation": 1040
+    },
+    {
+      "km": 71.3,
+      "elevation": 1188
+    },
+    {
+      "km": 75.2,
+      "elevation": 1142
+    },
+    {
+      "km": 79,
+      "elevation": 995
+    },
+    {
+      "km": 82.9,
+      "elevation": 953
+    },
+    {
+      "km": 85.4,
+      "elevation": 1148
+    },
+    {
+      "km": 88,
+      "elevation": 1326
+    },
+    {
+      "km": 90.5,
+      "elevation": 901
+    },
+    {
+      "km": 93,
+      "elevation": 898
+    },
+    {
+      "km": 94.1,
+      "elevation": 1037
+    },
+    {
+      "km": 95.1,
+      "elevation": 1022
+    },
+    {
+      "km": 96.2,
+      "elevation": 874
+    },
+    {
+      "km": 97.2,
+      "elevation": 869
+    },
+    {
+      "km": 99.5,
+      "elevation": 1088
+    },
+    {
+      "km": 101.8,
+      "elevation": 1053
+    },
+    {
+      "km": 104.1,
+      "elevation": 1146
+    },
+    {
+      "km": 106.4,
+      "elevation": 822
+    },
+    {
+      "km": 109.7,
+      "elevation": 814
+    },
+    {
+      "km": 112.9,
+      "elevation": 1002
+    },
+    {
+      "km": 116.2,
+      "elevation": 1078
+    },
+    {
+      "km": 119.4,
+      "elevation": 771
+    },
+    {
+      "km": 123.9,
+      "elevation": 1462
+    },
+    {
+      "km": 128.4,
+      "elevation": 1382
+    },
+    {
+      "km": 132.8,
+      "elevation": 864
+    },
+    {
+      "km": 137.3,
+      "elevation": 730
+    },
+    {
+      "km": 139.1,
+      "elevation": 911
+    },
+    {
+      "km": 140.9,
+      "elevation": 807
+    },
+    {
+      "km": 142.6,
+      "elevation": 841
+    },
+    {
+      "km": 144.4,
+      "elevation": 699
+    },
+    {
+      "km": 145.9,
+      "elevation": 1039
+    },
+    {
+      "km": 147.4,
+      "elevation": 1023
+    },
+    {
+      "km": 148.8,
+      "elevation": 1104
+    },
+    {
+      "km": 150.3,
+      "elevation": 704
+    },
+    {
+      "km": 152.2,
+      "elevation": 720
+    },
+    {
+      "km": 154.1,
+      "elevation": 737
+    },
+    {
+      "km": 156,
+      "elevation": 785
+    },
+    {
+      "km": 157.9,
+      "elevation": 683
+    },
+    {
+      "km": 159.6,
+      "elevation": 802
+    },
+    {
+      "km": 161.4,
+      "elevation": 785
+    },
+    {
+      "km": 163.1,
+      "elevation": 673
+    },
+    {
+      "km": 164.8,
+      "elevation": 674
+    },
+    {
+      "km": 166.3,
+      "elevation": 654
+    },
+    {
+      "km": 167.9,
+      "elevation": 708
+    },
+    {
+      "km": 169.4,
+      "elevation": 655
+    },
+    {
+      "km": 170.9,
+      "elevation": 654
+    },
+    {
+      "km": 175.4,
+      "elevation": 1323
+    },
+    {
+      "km": 179.9,
+      "elevation": 1100
+    },
+    {
+      "km": 184.3,
+      "elevation": 730
+    },
+    {
+      "km": 188.8,
+      "elevation": 610
+    },
+    {
+      "km": 190.7,
+      "elevation": 833
+    },
+    {
+      "km": 192.6,
+      "elevation": 843
+    },
+    {
+      "km": 194.5,
+      "elevation": 623
+    },
+    {
+      "km": 196.4,
+      "elevation": 632
+    },
+    {
+      "km": 198.6,
+      "elevation": 682
+    },
+    {
+      "km": 200.7,
+      "elevation": 596
+    },
+    {
+      "km": 202.9,
+      "elevation": 871
+    },
+    {
+      "km": 205,
+      "elevation": 659
+    },
+    {
+      "km": 207.7,
+      "elevation": 725
+    },
+    {
+      "km": 210.4,
+      "elevation": 813
+    },
+    {
+      "km": 213.1,
+      "elevation": 888
+    },
+    {
+      "km": 215.8,
+      "elevation": 583
+    },
+    {
+      "km": 218.4,
+      "elevation": 559
+    },
+    {
+      "km": 221,
+      "elevation": 560
+    },
+    {
+      "km": 223.6,
+      "elevation": 640
+    },
+    {
+      "km": 226.2,
+      "elevation": 554
+    },
+    {
+      "km": 229.9,
+      "elevation": 1149
+    },
+    {
+      "km": 233.6,
+      "elevation": 895
+    },
+    {
+      "km": 237.2,
+      "elevation": 519
+    },
+    {
+      "km": 240.9,
+      "elevation": 542
+    },
+    {
+      "km": 245.1,
+      "elevation": 813
+    },
+    {
+      "km": 249.3,
+      "elevation": 871
+    },
+    {
+      "km": 253.5,
+      "elevation": 635
+    },
+    {
+      "km": 257.7,
+      "elevation": 530
+    },
+    {
+      "km": 261,
+      "elevation": 523
+    },
+    {
+      "km": 264.3,
+      "elevation": 625
+    },
+    {
+      "km": 267.6,
+      "elevation": 534
+    },
+    {
+      "km": 270.9,
+      "elevation": 493
+    },
+    {
+      "km": 273,
+      "elevation": 892
+    },
+    {
+      "km": 275.1,
+      "elevation": 746
+    },
+    {
+      "km": 277.2,
+      "elevation": 546
+    },
+    {
+      "km": 279.3,
+      "elevation": 484
+    },
+    {
+      "km": 283.9,
+      "elevation": 476
+    },
+    {
+      "km": 288.5,
+      "elevation": 511
+    },
+    {
+      "km": 293.1,
+      "elevation": 493
+    },
+    {
+      "km": 297.7,
+      "elevation": 498
+    },
+    {
+      "km": 301.9,
+      "elevation": 480
+    },
+    {
+      "km": 306,
+      "elevation": 488
+    },
+    {
+      "km": 310.2,
+      "elevation": 531
+    },
+    {
+      "km": 314.3,
+      "elevation": 510
+    },
+    {
+      "km": 325.8,
+      "elevation": 832
+    },
+    {
+      "km": 337.3,
+      "elevation": 672
+    },
+    {
+      "km": 348.7,
+      "elevation": 1350
+    },
+    {
+      "km": 360.2,
+      "elevation": 647
+    },
+    {
+      "km": 371.4,
+      "elevation": 670
+    },
+    {
+      "km": 382.6,
+      "elevation": 630
+    },
+    {
+      "km": 393.8,
+      "elevation": 672
+    },
+    {
+      "km": 405,
+      "elevation": 537
+    },
+    {
+      "km": 414,
+      "elevation": 674
+    },
+    {
+      "km": 423.1,
+      "elevation": 537
+    },
+    {
+      "km": 432.1,
+      "elevation": 525
+    },
+    {
+      "km": 441.1,
+      "elevation": 468
+    },
+    {
+      "km": 452.4,
+      "elevation": 496
+    },
+    {
+      "km": 463.7,
+      "elevation": 505
+    },
+    {
+      "km": 475,
+      "elevation": 576
+    },
+    {
+      "km": 486.3,
+      "elevation": 502
+    },
+    {
+      "km": 492.4,
+      "elevation": 496
+    },
+    {
+      "km": 498.4,
+      "elevation": 480
+    },
+    {
+      "km": 504.5,
+      "elevation": 477
+    },
+    {
+      "km": 510.5,
+      "elevation": 480
+    },
+    {
+      "km": 519.3,
+      "elevation": 482
+    },
+    {
+      "km": 528.1,
+      "elevation": 490
+    },
+    {
+      "km": 536.9,
+      "elevation": 500
+    },
+    {
+      "km": 545.7,
+      "elevation": 510
+    }
+  ]
+}
