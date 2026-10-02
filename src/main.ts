@@ -8,6 +8,7 @@ import {
   isOnline,
   resolveAssetUrl,
 } from './tileCache.ts'
+import { createLocateControl } from './locate.ts'
 
 interface StationProperties {
   name: string
@@ -53,7 +54,16 @@ app.innerHTML = `
       </button>
     </header>
     <div id="map"></div>
+    <button id="locate-btn" class="locate-btn" title="定位 / 跟随我" type="button" aria-pressed="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
+        <circle cx="12" cy="12" r="8"/>
+      </svg>
+      <span id="locate-label">定位</span>
+    </button>
     <div id="offline-banner" class="offline-banner hidden">离线模式 · 已加载沿线底图</div>
+    <div id="toast" class="toast hidden" role="status"></div>
     <div id="station-popup" class="station-popup hidden">
       <button class="popup-close" aria-label="关闭">&times;</button>
       <h3 class="popup-title"></h3>
@@ -310,6 +320,17 @@ function setupSearch() {
   })
 }
 
+let toastTimer: number | undefined
+function showToast(msg: string) {
+  const el = document.getElementById('toast')!
+  el.textContent = msg
+  el.classList.remove('hidden')
+  if (toastTimer !== undefined) window.clearTimeout(toastTimer)
+  toastTimer = window.setTimeout(() => {
+    el.classList.add('hidden')
+  }, 3200)
+}
+
 function setupControls() {
   document.getElementById('fit-line-btn')!.addEventListener('click', () => {
     fitToLine()
@@ -317,6 +338,17 @@ function setupControls() {
   })
   
   document.querySelector('.popup-close')!.addEventListener('click', hidePopup)
+
+  const locateBtn = document.getElementById('locate-btn') as HTMLButtonElement
+  const locateLabel = document.getElementById('locate-label')!
+  const locate = createLocateControl(map, {
+    button: locateBtn,
+    label: locateLabel,
+    toast: showToast,
+  })
+  locateBtn.addEventListener('click', () => {
+    void locate.toggle()
+  })
 }
 
 loadData()

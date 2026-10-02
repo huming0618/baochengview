@@ -325,3 +325,117 @@ html, body {
 .offline-banner {
   font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif;
 }
+
+/* Live location control */
+.locate-btn {
+  position: absolute;
+  right: 12px;
+  bottom: 112px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 8px 12px;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  transition: background 0.15s, color 0.15s, transform 0.1s;
+}
+
+.locate-btn svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  color: #2A93EE;
+}
+
+.locate-btn:hover {
+  background: var(--bg-elevated);
+}
+
+.locate-btn:active {
+  transform: scale(0.96);
+}
+
+.locate-btn.active {
+  background: #2A93EE;
+  color: #fff;
+}
+
+.locate-btn.active svg {
+  color: #fff;
+}
+
+.locate-btn.located:not(.active) {
+  color: var(--text-primary);
+}
+
+.user-location-marker {
+  background: transparent !important;
+  border: none !important;
+}
+
+.user-location-dot {
+  width: 16px;
+  height: 16px;
+  margin: 3px;
+  background: #2A93EE;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px rgba(42, 147, 238, 0.35), 0 2px 6px rgba(0, 0, 0, 0.45);
+  position: relative;
+}
+
+.user-location-dot::after {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+  border: 2px solid rgba(42, 147, 238, 0.45);
+  animation: locate-pulse 2s ease-out infinite;
+}
+
+@keyframes locate-pulse {
+  0% { transform: scale(0.6); opacity: 0.9; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+.toast {
+  position: absolute;
+  left: 50%;
+  bottom: 88px;
+  transform: translateX(-50%);
+  z-index: 1100;
+  max-width: min(90vw, 320px);
+  padding: 10px 16px;
+  background: rgba(26, 26, 46, 0.95);
+  color: var(--text-primary);
+  border: 1px solid rgba(255, 215, 0, 0.35);
+  border-radius: 16px;
+  font-size: 13px;
+  text-align: center;
+  box-shadow: var(--shadow);
+  pointer-events: none;
+}
+
+.toast.hidden {
+  display: none;
+}
+
+@media (min-width: 600px) {
+  .locate-btn {
+    right: 24px;
+    bottom: 120px;
+  }
+}
+
+.locate-btn,
+.toast {
+  font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif;
+}
