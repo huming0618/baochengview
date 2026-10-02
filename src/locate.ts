@@ -292,42 +292,61 @@ export function createLocateControl(
     }
   }
 
-  async function pollPosition() {
+  function doPollTick() {
+    // Always emit current position to update timestamp, even if we don't get new coords
+    console.log('[Locate] Poll tick, state:', state)
+    
+    // Emit existing position to refresh timestamp in UI
+    if (lastLatLng) {
+      emitPosition()
+    }
+    
+    // Only try to get new position if in active state
     if (state !== 'following' && state !== 'located') {
-      stopPolling()
+      console.log('[Locate] Poll: not in active state, skipping GPS fetch')
       return
     }
     
-    try {
-      if (Capacitor.isNativePlatform()) {
-        const pos = await Geolocation.getCurrentPosition({
-          enableHighAccuracy: true,
-          timeout: 5000,
-          maximumAge: 0,
-        })
-        console.log('[Locate] Poll update:', pos.coords.latitude, pos.coords.longitude)
+    // Fetch fresh position (non-blocking)
+    if (Capacitor.isNativePlatform()) {
+      Geolocation.getCurrentPosition({
+        enableHighAccuracy: true,
+        timeout: 2000,
+        maximumAge: 0,
+      }).then((pos) => {
+        console.log('[Locate] Poll GPS:', pos.coords.latitude.toFixed(5), pos.coords.longitude.toFixed(5))
         onWatchPosition(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy ?? 0)
-      } else {
-        navigator.geolocation.getCurrentPosition(
-          (pos) => {
-            console.log('[Locate] Poll update:', pos.coords.latitude, pos.coords.longitude)
-            onWatchPosition(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy ?? 0)
-          },
-          (err) => console.warn('[Locate] Poll error:', err),
-          { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
-        )
-      }
-    } catch (e) {
-      console.warn('[Locate] Poll getCurrentPosition error:', e)
+      }).catch((e) => {
+        console.warn('[Locate] Poll GPS error:', e)
+        // Still emit to update timestamp even on error
+        if (lastLatLng) emitPosition()
+      })
+    } else {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          console.log('[Locate] Poll GPS:', pos.coords.latitude.toFixed(5), pos.coords.longitude.toFixed(5))
+          onWatchPosition(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy ?? 0)
+        },
+        (err) => {
+          console.warn('[Locate] Poll GPS error:', err)
+          // Still emit to update timestamp even on error
+          if (lastLatLng) emitPosition()
+        },
+        { enableHighAccuracy: true, timeout: 2000, maximumAge: 0 }
+      )
     }
   }
 
   function startPolling() {
-    if (pollIntervalId !== null) return
+    if (pollIntervalId !== null) {
+      console.log('[Locate] Polling already running')
+      return
+    }
     console.log('[Locate] Starting position polling every', POLL_INTERVAL_MS, 'ms')
-    pollIntervalId = setInterval(() => {
-      pollPosition().catch((e) => console.warn('[Locate] Poll error:', e))
-    }, POLL_INTERVAL_MS)
+    // Run first tick immediately
+    doPollTick()
+    // Then schedule recurring ticks
+    pollIntervalId = setInterval(doPollTick, POLL_INTERVAL_MS)
   }
 
   async function startLocate() {
