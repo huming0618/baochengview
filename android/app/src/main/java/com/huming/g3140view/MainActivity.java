@@ -1,4 +1,4 @@
-package com.huming.baochengview;
+package com.huming.g3140view;
 
 import com.getcapacitor.BridgeActivity;
 

@@ -57,15 +57,86 @@ html, body {
   right: 0;
   z-index: 1000;
   display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px;
-  background: linear-gradient(to bottom, rgba(26, 26, 46, 0.95) 0%, rgba(26, 26, 46, 0.8) 70%, transparent 100%);
+  flex-direction: column;
+  gap: 0;
+  padding: 12px 12px 8px;
+  background: linear-gradient(to bottom, rgba(26, 26, 46, 0.98) 0%, rgba(26, 26, 46, 0.92) 80%, transparent 100%);
   pointer-events: none;
 }
 
 .map-header > * {
   pointer-events: auto;
+}
+
+.header-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.location-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 6px 10px;
+  background: rgba(22, 33, 62, 0.85);
+  border-radius: 16px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  align-self: flex-start;
+  transition: all 0.2s ease;
+}
+
+.location-status.has-location {
+  color: var(--text-primary);
+  border-color: rgba(42, 147, 238, 0.4);
+  background: rgba(42, 147, 238, 0.15);
+}
+
+.location-status.has-location .location-status-icon {
+  filter: none;
+}
+
+.location-status.off-corridor {
+  border-color: rgba(255, 215, 0, 0.3);
+  background: rgba(255, 215, 0, 0.1);
+  color: var(--text-secondary);
+}
+
+.location-status-icon {
+  font-size: 14px;
+  filter: grayscale(1) opacity(0.5);
+  transition: filter 0.2s;
+}
+
+.location-status-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.location-status-coords {
+  font-size: 12px;
+  font-family: 'SF Mono', 'Monaco', 'Menlo', monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-primary);
+}
+
+.location-status-corridor {
+  font-size: 11px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.location-status.has-location .location-status-corridor {
+  color: #6cb8ff;
 }
 
 .search-container {
@@ -286,11 +357,16 @@ html, body {
   }
   
   .map-header {
-    padding: 16px 24px;
+    padding: 16px 24px 10px;
   }
   
   .search-container {
     max-width: 360px;
+  }
+  
+  .location-status-coords,
+  .location-status-corridor {
+    max-width: 400px;
   }
 }
 
@@ -436,7 +512,8 @@ html, body {
 }
 
 .locate-btn,
-.toast {
+.toast,
+.location-status {
   font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif;
 }
 
@@ -490,7 +567,7 @@ html, body {
   background: var(--bg-dark);
   display: flex;
   flex-direction: column;
-  padding-top: 64px;
+  padding-top: 100px;
   padding-bottom: 72px;
 }
 
@@ -788,7 +865,7 @@ html, body {
 
 @media (min-width: 600px) {
   .scale-view {
-    padding-top: 72px;
+    padding-top: 110px;
   }
   .scale-shell {
     max-width: 480px;

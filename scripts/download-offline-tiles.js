@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 /**
- * Pre-seed dark basemap tiles for Baocheng Railway corridor (Chengdu–Baoji).
+ * Pre-seed dark basemap tiles for G3140 HSR corridor (Neijiangbei–Taiyuannan).
  * Prefer Carto dark_all, then OSM mirrors (osm.fr / osm.de). Esri removed —
  * public Canvas often returns "API key required" watermarks.
  * Reject known bad hashes and post-pass identical tiny/blocked tiles.
- * Zoom z7–z11 along corridor bbox — keeps APK modest (~under 40MB).
+ * Zoom z7–z10 along corridor bbox — keeps APK modest.
  */
 import fs from 'fs';
 import path from 'path';
@@ -15,14 +15,14 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
 const OUT = path.join(ROOT, 'public', 'offline-tiles');
 
-/** [south, west, north, east] — padded Baocheng corridor (宝鸡↔成都) */
-const SEED_BBOX = [30.55, 103.86, 34.53, 107.38];
+/** [south, west, north, east] — padded G3140 corridor (内江北↔太原南) */
+const SEED_BBOX = [29.4, 103.8, 38.0, 113.0];
 const Z_MIN = 7;
-const Z_MAX = 11;
+const Z_MAX = 10;
 const WORKERS = 4;
 const DELAY_MS = 140;
 const UA =
-  'BaochengViewOfflineSeeder/1.0 (https://github.com/huming0618/baochengview; educational offline pack; contact via GitHub issues)';
+  'G3140ViewOfflineSeeder/1.0 (https://github.com/huming0618/baochengview; educational offline pack; contact via GitHub issues)';
 
 const CARTO = (s, z, x, y) => `https://${s}.basemaps.cartocdn.com/dark_all/${z}/${x}/${y}.png`;
 const OSM_FR = (s, z, x, y) => `https://${s}.tile.openstreetmap.fr/osmfr/${z}/${x}/${y}.png`;
@@ -264,7 +264,7 @@ async function main() {
     generatedAt: new Date().toISOString(),
     zoom: { min: Z_MIN, max: Z_MAX },
     seedBbox: SEED_BBOX,
-    note: 'Baocheng Railway corridor Chengdu–Baoji (z7–z11). Seeded from Carto dark_all with OSM mirrors fallback. Esri removed (API-key watermarks). Runtime: Carto → OSM.',
+    note: 'G3140 HSR corridor Neijiangbei–Taiyuannan (z7–z10). Seeded from Carto dark_all with OSM mirrors fallback. Esri removed (API-key watermarks). Runtime: Carto → OSM.',
     perZoom,
     uniqueRequested: jobs.length,
     downloadedOk: ok,
@@ -274,7 +274,7 @@ async function main() {
     primaryProvider: primary,
     uniqueHashesOnDisk: onDiskHashes.size,
     attribution:
-      'Basemap tiles © OpenStreetMap contributors / CARTO. Bundled for offline Baocheng View demo only.',
+      'Basemap tiles © OpenStreetMap contributors / CARTO. Bundled for offline G3140 View demo only.',
     pathTemplate: 'offline-tiles/{z}/{x}/{y}.png',
     onDiskPngCount: fileCount,
     onDiskBytes: bytes,

@@ -1,8 +1,8 @@
 {
-  "name": "baochengview",
+  "name": "g3140view",
   "private": true,
   "version": "1.0.0",
-  "description": "宝成铁路慢车沿线地图 - Baocheng Railway corridor map (Leaflet + Capacitor Android offline)",
+  "description": "G3140高铁沿线地图 - G3140 HSR corridor map Neijiangbei to Taiyuannan (Leaflet + Capacitor Android offline)",
   "type": "module",
   "scripts": {
     "dev": "vite",
