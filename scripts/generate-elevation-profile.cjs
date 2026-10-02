@@ -22,7 +22,7 @@ const OUTPUT_PATH = path.join(__dirname, '../public/elevation-profile.json');
 
 const OPEN_METEO_ELEVATION_URL = 'https://api.open-meteo.com/v1/elevation';
 const SAMPLE_INTERVAL_KM = 1.5;
-const MAX_GRADE_PERMILLE = 45;
+const MAX_GRADE_PERMILLE = 30;
 
 const EARTH_R = 6371000;
 
@@ -171,70 +171,147 @@ function corridorKmToTrackPoint(km, corridor, segs) {
   return { lat: interpLat, lon: interpLon };
 }
 
-function filterUnrealisticGrades(profile, maxGradePermille) {
-  const filtered = [];
+/**
+ * Smooth elevation profile to ensure no adjacent samples exceed maxGradePermille.
+ * Uses iterative smoothing that adjusts outlier elevations toward local averages
+ * rather than creating uniform interpolated ramps.
+ */
+function smoothElevationProfile(profile, maxGradePermille) {
+  const smoothed = profile.map(p => ({ ...p, elevation: p.elevation, smoothed: false }));
   const issues = [];
   
-  for (let i = 0; i < profile.length; i++) {
-    const pt = profile[i];
-    
-    if (pt.elevation === null) {
-      issues.push({ km: pt.km, reason: 'null elevation' });
-      continue;
+  // Handle null elevations first by interpolating from neighbors
+  for (let i = 0; i < smoothed.length; i++) {
+    if (smoothed[i].elevation === null) {
+      let prev = null, next = null;
+      for (let j = i - 1; j >= 0; j--) {
+        if (smoothed[j].elevation !== null) { prev = smoothed[j]; break; }
+      }
+      for (let j = i + 1; j < smoothed.length; j++) {
+        if (smoothed[j].elevation !== null) { next = smoothed[j]; break; }
+      }
+      if (prev && next) {
+        const t = (smoothed[i].km - prev.km) / (next.km - prev.km);
+        smoothed[i].elevation = Math.round(prev.elevation + t * (next.elevation - prev.elevation));
+        smoothed[i].smoothed = true;
+      } else if (prev) {
+        smoothed[i].elevation = prev.elevation;
+        smoothed[i].smoothed = true;
+      } else if (next) {
+        smoothed[i].elevation = next.elevation;
+        smoothed[i].smoothed = true;
+      }
     }
+  }
+  
+  // Iterative smoothing: repeatedly find and fix grade violations
+  const maxIterations = 50;
+  for (let iter = 0; iter < maxIterations; iter++) {
+    let violations = 0;
     
-    if (filtered.length === 0) {
-      filtered.push({ ...pt });
-      continue;
-    }
-    
-    const prev = filtered[filtered.length - 1];
-    const distKm = Math.abs(pt.km - prev.km);
-    const elevDiff = Math.abs(pt.elevation - prev.elevation);
-    
-    if (distKm > 0.01) {
-      const gradePermille = (elevDiff / (distKm * 1000)) * 1000;
+    for (let i = 1; i < smoothed.length; i++) {
+      const prev = smoothed[i - 1];
+      const curr = smoothed[i];
+      const distKm = curr.km - prev.km;
+      
+      if (distKm < 0.01) continue;
+      
+      const elevDiff = curr.elevation - prev.elevation;
+      const gradePermille = Math.abs(elevDiff) / (distKm * 1000) * 1000;
       
       if (gradePermille > maxGradePermille) {
-        issues.push({ 
-          km: pt.km, 
-          reason: `grade ${gradePermille.toFixed(0)}‰ (${prev.elevation}m → ${pt.elevation}m over ${(distKm*1000).toFixed(0)}m)`,
-          originalElev: pt.elevation
-        });
-        continue;
+        violations++;
+        
+        if (iter === 0) {
+          issues.push({
+            km: curr.km,
+            reason: `grade ${gradePermille.toFixed(0)}‰`,
+            original: curr.elevation
+          });
+        }
+        
+        // Calculate max allowed elevation change
+        const maxChange = maxGradePermille * distKm; // meters
+        const direction = elevDiff > 0 ? 1 : -1;
+        
+        // Use weighted average with neighbors for smoother result
+        // Look ahead and behind to find local trend
+        let localSum = 0;
+        let localCount = 0;
+        const windowSize = 3;
+        
+        for (let j = Math.max(0, i - windowSize); j <= Math.min(smoothed.length - 1, i + windowSize); j++) {
+          if (j !== i && smoothed[j].elevation !== null) {
+            // Weight closer points more
+            const weight = 1 / (1 + Math.abs(j - i));
+            localSum += smoothed[j].elevation * weight;
+            localCount += weight;
+          }
+        }
+        
+        let targetElev;
+        if (localCount > 0) {
+          const localAvg = localSum / localCount;
+          // Blend between max-grade-constrained value and local average
+          const constrainedElev = prev.elevation + direction * maxChange;
+          targetElev = Math.round(0.7 * constrainedElev + 0.3 * localAvg);
+        } else {
+          targetElev = Math.round(prev.elevation + direction * maxChange);
+        }
+        
+        // Ensure we don't overshoot in wrong direction
+        if (direction > 0) {
+          targetElev = Math.min(targetElev, prev.elevation + maxChange);
+        } else {
+          targetElev = Math.max(targetElev, prev.elevation - maxChange);
+        }
+        
+        smoothed[i].elevation = targetElev;
+        smoothed[i].smoothed = true;
       }
     }
     
-    filtered.push({ ...pt });
-  }
-  
-  const result = [];
-  for (let i = 0; i < profile.length; i++) {
-    const pt = profile[i];
-    const existing = filtered.find(f => Math.abs(f.km - pt.km) < 0.01);
+    if (violations === 0) {
+      console.log(`  Smoothing converged after ${iter + 1} iterations`);
+      break;
+    }
     
-    if (existing) {
-      result.push(existing);
-    } else {
-      let prevF = null, nextF = null;
-      for (const f of filtered) {
-        if (f.km < pt.km && (!prevF || f.km > prevF.km)) prevF = f;
-        if (f.km > pt.km && (!nextF || f.km < nextF.km)) nextF = f;
-      }
-      
-      if (prevF && nextF) {
-        const t = (pt.km - prevF.km) / (nextF.km - prevF.km);
-        const interpElev = Math.round(prevF.elevation + t * (nextF.elevation - prevF.elevation));
-        result.push({ ...pt, elevation: interpElev, interpolated: true });
-      } else if (prevF) {
-        result.push({ ...pt, elevation: prevF.elevation, interpolated: true });
-      } else if (nextF) {
-        result.push({ ...pt, elevation: nextF.elevation, interpolated: true });
-      }
+    if (iter === maxIterations - 1) {
+      console.log(`  Warning: smoothing did not fully converge after ${maxIterations} iterations, ${violations} violations remain`);
     }
   }
   
-  return { profile: result, issues };
+  // Final pass: apply light smoothing to reduce any remaining jaggedness
+  // while preserving overall shape
+  const finalSmoothed = smoothed.map((p, i) => {
+    if (i === 0 || i === smoothed.length - 1) return p;
+    
+    const prev = smoothed[i - 1];
+    const next = smoothed[i + 1];
+    
+    // Light 3-point moving average (weighted toward center)
+    const avg = (prev.elevation * 0.2 + p.elevation * 0.6 + next.elevation * 0.2);
+    
+    // Only apply if it doesn't create new violations
+    const newGradePrev = Math.abs(avg - prev.elevation) / ((p.km - prev.km) * 1000) * 1000;
+    const newGradeNext = Math.abs(next.elevation - avg) / ((next.km - p.km) * 1000) * 1000;
+    
+    if (newGradePrev <= maxGradePermille && newGradeNext <= maxGradePermille) {
+      return { ...p, elevation: Math.round(avg), smoothed: p.smoothed || Math.abs(avg - p.elevation) > 1 };
+    }
+    return p;
+  });
+  
+  return { 
+    profile: finalSmoothed.map(p => ({
+      km: p.km,
+      lat: p.lat,
+      lon: p.lon,
+      elevation: p.elevation,
+      ...(p.smoothed ? { smoothed: true } : {})
+    })),
+    issues 
+  };
 }
 
 async function main() {
@@ -306,8 +383,8 @@ async function main() {
     elevation: elevations[i]
   }));
   
-  console.log(`Filtering unrealistic grades (>${MAX_GRADE_PERMILLE}‰)...`);
-  const { profile: filteredProfile, issues } = filterUnrealisticGrades(rawProfile, MAX_GRADE_PERMILLE);
+  console.log(`Smoothing profile to cap grades at ${MAX_GRADE_PERMILLE}‰...`);
+  const { profile: filteredProfile, issues } = smoothElevationProfile(rawProfile, MAX_GRADE_PERMILLE);
   
   if (issues.length > 0) {
     console.log(`  Filtered/interpolated ${issues.length} points:`);
@@ -330,7 +407,7 @@ async function main() {
   const validElevs = filteredProfile.map(p => p.elevation).filter(e => e !== null);
   const minElev = Math.min(...validElevs);
   const maxElev = Math.max(...validElevs);
-  const interpolatedCount = filteredProfile.filter(p => p.interpolated).length;
+  const smoothedCount = filteredProfile.filter(p => p.smoothed).length;
   
   const output = {
     source: 'Open-Meteo Elevation API (SRTM 90m)',
@@ -338,9 +415,9 @@ async function main() {
     notes: {
       samplingMethod: 'Points sampled at regular corridor-km intervals, projected to nearest track segment',
       kmSystem: 'Corridor-km consistent with locate projection (station-to-station interpolation)',
-      gradeFilter: `Points implying >${MAX_GRADE_PERMILLE}‰ grade were interpolated from neighbors`,
-      interpolatedPoints: interpolatedCount,
-      filteredIssues: issues.length
+      gradeSmoothing: `Displayed grades capped at ${MAX_GRADE_PERMILLE}‰ (Baocheng ruling grade ~30‰); SRTM 90m noise in Qinling otherwise invents impossible climbs`,
+      smoothedPoints: smoothedCount,
+      originalIssues: issues.length
     },
     summary: {
       totalKm: Math.round(totalKm * 10) / 10,
@@ -353,17 +430,17 @@ async function main() {
     profile: filteredProfile.map(p => ({
       km: p.km,
       elevation: p.elevation,
-      ...(p.interpolated ? { interpolated: true } : {})
+      ...(p.smoothed ? { smoothed: true } : {})
     }))
   };
   
   fs.writeFileSync(OUTPUT_PATH, JSON.stringify(output, null, 2));
   console.log(`\nWrote elevation profile to ${OUTPUT_PATH}`);
   console.log(`Summary: ${output.summary.totalKm} km corridor, ${minElev}m - ${maxElev}m elevation`);
-  console.log(`Profile: ${filteredProfile.length} points, ${interpolatedCount} interpolated`);
+  console.log(`Profile: ${filteredProfile.length} points, ${smoothedCount} smoothed`);
   
   if (issues.length > 0) {
-    console.log(`\nNote: ${issues.length} points were filtered/interpolated due to unrealistic grades.`);
+    console.log(`\nNote: ${issues.length} original samples had SRTM grades >${MAX_GRADE_PERMILLE}‰ and were smoothed.`);
   }
 }
 
