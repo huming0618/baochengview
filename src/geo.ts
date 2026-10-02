@@ -11,7 +11,7 @@ export interface Station extends LatLng {
 }
 
 export interface CorridorStation extends Station {
-  /** Cumulative km from first station (order ascending: 宝鸡→成都). */
+  /** Cumulative km from first station (order ascending: 内江北→太原南). */
   km: number
 }
 
@@ -20,7 +20,7 @@ export interface LineProjection {
   lon: number
   /** Distance from GPS to nearest point on polyline (meters). */
   distM: number
-  /** Rough km along station corridor (宝鸡=0). */
+  /** Rough km along station corridor (内江北=0). */
   kmAlong: number
   prev: CorridorStation
   next: CorridorStation
@@ -120,7 +120,7 @@ export function nearestOnPolyline(
   return best ?? { lat: p.lat, lon: p.lon, distM: Infinity, t: 0 }
 }
 
-/** Build corridor stations sorted by order with cumulative km (宝鸡→成都). */
+/** Build corridor stations sorted by order with cumulative km (内江北→太原南). */
 export function buildCorridor(stations: Station[]): CorridorStation[] {
   const sorted = [...stations].sort((a, b) => a.order - b.order)
   const out: CorridorStation[] = []

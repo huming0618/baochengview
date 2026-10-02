@@ -67,7 +67,7 @@ app.innerHTML = `
       </button>
     </header>
     <div id="map"></div>
-    <div id="scale-view" class="scale-view hidden" aria-label="宝成线站序刻度"></div>
+    <div id="scale-view" class="scale-view hidden" aria-label="G3140站序刻度"></div>
     <button id="locate-btn" class="locate-btn" title="定位 / 跟随我" type="button" aria-pressed="false">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
         <circle cx="12" cy="12" r="3"/>
@@ -91,7 +91,7 @@ const map = L.map('map', {
   attributionControl: false,
   maxZoom: 18,
   minZoom: 5,
-}).setView([32.5, 105.5], 7)
+}).setView([33.5, 108], 6)
 
 L.control.zoom({ position: 'bottomright' }).addTo(map)
 
@@ -179,7 +179,7 @@ function applyLocationToScale(pos: LocatePosition | null) {
 
 async function loadData() {
   try {
-    const response = await fetch(resolveAssetUrl('baocheng.geojson'))
+    const response = await fetch(resolveAssetUrl('g3140.geojson'))
     const data: GeoJSONData = await response.json()
     
     const lineFeatures = data.features.filter(f => f.geometry.type === 'MultiLineString')
@@ -274,7 +274,7 @@ function showPopup(station: { name: string; lat: number; lon: number; order: num
   title.textContent = station.name
   const cs = corridor.find(s => s.name === station.name)
   const kmBit = cs ? ` · 沿线约 ${cs.km < 10 ? cs.km.toFixed(1) : Math.round(cs.km)} km` : ''
-  detail.textContent = `宝成线第 ${station.order} 站${kmBit}`
+  detail.textContent = `G3140 第 ${station.order} 站${kmBit}`
   
   popup.classList.remove('hidden')
 }

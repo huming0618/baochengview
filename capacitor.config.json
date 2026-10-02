@@ -1,6 +1,6 @@
 {
-  "appId": "com.huming.baochengview",
-  "appName": "宝成慢车",
+  "appId": "com.huming.g3140view",
+  "appName": "G3140高铁",
   "webDir": "dist",
   "server": {
     "androidScheme": "https"

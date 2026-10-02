@@ -48,9 +48,9 @@ export function createScaleView(root: HTMLElement): ScaleViewController {
         </div>
       </div>
       <div class="scale-ends">
-        <span class="scale-end-from">宝鸡</span>
-        <span class="scale-end-mid">宝成线 · 站序刻度</span>
-        <span class="scale-end-to">成都</span>
+        <span class="scale-end-from">内江北</span>
+        <span class="scale-end-mid">G3140 · 站序刻度</span>
+        <span class="scale-end-to">太原南</span>
       </div>
     </div>
   `
@@ -133,7 +133,7 @@ export function createScaleView(root: HTMLElement): ScaleViewController {
     const p = projection
     if (p.atStation) {
       statusEl.innerHTML = `<div class="scale-status-main">你在 <strong>${p.atStation.name}</strong> 附近</div>
-        <div class="scale-status-sub">沿线约 ${formatKm(p.kmAlong)} km（宝鸡→成都）</div>`
+        <div class="scale-status-sub">沿线约 ${formatKm(p.kmAlong)} km（内江北→太原南）</div>`
     } else {
       statusEl.innerHTML = `<div class="scale-status-main">你在 <strong>${p.prev.name}</strong> ↔ <strong>${p.next.name}</strong> 之间</div>
         <div class="scale-status-sub">沿线约 ${formatKm(p.kmAlong)} km · 距线 ${Math.round(p.distM)} m</div>`
