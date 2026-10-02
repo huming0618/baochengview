@@ -146,21 +146,23 @@ export function createElevationView(root: HTMLElement): ElevationViewController 
           <button type="button" class="elev-mode-btn" data-mode="relief">起伏</button>
         </div>
       </div>
-      <div class="elev-chart-container" id="elev-chart-container">
-        <div class="elev-chart" id="elev-chart">
-          <canvas id="elev-canvas"></canvas>
-          <div class="elev-me hidden" id="elev-me" title="我">
-            <span class="elev-me-dot"></span>
-            <span class="elev-me-label">我</span>
+      <div class="elev-chart-area">
+        <div class="elev-chart-container" id="elev-chart-container">
+          <div class="elev-chart" id="elev-chart">
+            <canvas id="elev-canvas"></canvas>
+            <div class="elev-me hidden" id="elev-me" title="我">
+              <span class="elev-me-dot"></span>
+              <span class="elev-me-label">我</span>
+            </div>
+            <span class="elev-end-label elev-end-from">宝鸡</span>
+            <span class="elev-end-label elev-end-to">成都</span>
           </div>
+          <div class="elev-axis-y" id="elev-axis-y"></div>
         </div>
-        <div class="elev-axis-y" id="elev-axis-y"></div>
+        <div class="elev-axis-x" id="elev-axis-x"></div>
       </div>
-      <div class="elev-axis-x" id="elev-axis-x"></div>
-      <div class="elev-ends">
-        <span class="elev-end-from">宝鸡</span>
+      <div class="elev-footer">
         <span class="elev-end-mid" id="elev-mode-label">宝成线 · 海拔剖面</span>
-        <span class="elev-end-to">成都</span>
       </div>
     </div>
   `
@@ -176,7 +178,7 @@ export function createElevationView(root: HTMLElement): ElevationViewController 
 
   function checkLandscape() {
     const wasLandscape = isLandscape
-    isLandscape = window.matchMedia('(orientation: landscape) and (max-height: 500px)').matches
+    isLandscape = window.innerWidth > window.innerHeight
     if (wasLandscape !== isLandscape) {
       root.classList.toggle('elev-landscape', isLandscape)
       if (visible) render()
