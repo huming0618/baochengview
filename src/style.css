@@ -284,3 +284,22 @@ html, body {
     max-width: 360px;
   }
 }
+
+.offline-banner {
+  position: absolute;
+  top: 64px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  background: rgba(26, 26, 46, 0.92);
+  color: #ffd700;
+  font-size: 12px;
+  padding: 6px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 215, 0, 0.35);
+  pointer-events: none;
+  white-space: nowrap;
+}
+.offline-banner.hidden {
+  display: none;
+}

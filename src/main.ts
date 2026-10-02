@@ -1,6 +1,13 @@
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import './style.css'
+import {
+  createCachedTileLayer,
+  syncOfflineZoomLimits,
+  warmCacheFromBundled,
+  isOnline,
+  resolveAssetUrl,
+} from './tileCache.ts'
 
 interface StationProperties {
   name: string
@@ -46,6 +53,7 @@ app.innerHTML = `
       </button>
     </header>
     <div id="map"></div>
+    <div id="offline-banner" class="offline-banner hidden">离线模式 · 已加载沿线底图</div>
     <div id="station-popup" class="station-popup hidden">
       <button class="popup-close" aria-label="关闭">&times;</button>
       <h3 class="popup-title"></h3>
@@ -56,7 +64,9 @@ app.innerHTML = `
 
 const map = L.map('map', {
   zoomControl: false,
-  attributionControl: false
+  attributionControl: false,
+  maxZoom: 18,
+  minZoom: 5,
 }).setView([32.5, 105.5], 7)
 
 L.control.zoom({ position: 'bottomright' }).addTo(map)
@@ -65,13 +75,39 @@ L.control.attribution({
   position: 'bottomleft',
   prefix: false
 }).addTo(map).addAttribution(
-  '<a href="https://www.openstreetmap.org/copyright" target="_blank">© OSM</a>'
+  '<a href="https://www.openstreetmap.org/copyright" target="_blank">© OSM</a> · CARTO / Esri'
 )
 
-L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-  maxZoom: 18,
-  subdomains: 'abcd'
-}).addTo(map)
+const baseTiles = createCachedTileLayer(L, { maxZoom: 18 })
+baseTiles.addTo(map)
+syncOfflineZoomLimits(map, baseTiles)
+
+const offlineBanner = document.getElementById('offline-banner')!
+function setOfflineBanner(show: boolean) {
+  offlineBanner.classList.toggle('hidden', !show)
+}
+
+let offlineTileWarned = false
+let tileMissCount = 0
+baseTiles.on('tileoffline', () => {
+  tileMissCount += 1
+  if (offlineTileWarned || tileMissCount < 3) return
+  offlineTileWarned = true
+  setOfflineBanner(true)
+})
+window.addEventListener('online', () => {
+  offlineTileWarned = false
+  tileMissCount = 0
+  setOfflineBanner(false)
+  syncOfflineZoomLimits(map, baseTiles)
+})
+window.addEventListener('offline', () => {
+  syncOfflineZoomLimits(map, baseTiles)
+  setOfflineBanner(true)
+})
+if (!isOnline()) setOfflineBanner(true)
+
+warmCacheFromBundled(undefined).catch(() => {})
 
 const lineStyle: L.PathOptions = {
   color: '#ffd700',
@@ -98,7 +134,7 @@ let stations: { name: string; lat: number; lon: number; order: number }[] = []
 
 async function loadData() {
   try {
-    const response = await fetch('/baocheng.geojson')
+    const response = await fetch(resolveAssetUrl('baocheng.geojson'))
     const data: GeoJSONData = await response.json()
     
     const lineFeatures = data.features.filter(f => f.geometry.type === 'MultiLineString')
@@ -156,7 +192,8 @@ function selectStation(name: string) {
   const marker = stationMarkers.get(name)
   if (marker) {
     marker.setIcon(stationIconSelected)
-    map.setView(marker.getLatLng(), 12, { animate: true })
+    const targetZoom = Math.min(12, map.getMaxZoom())
+    map.setView(marker.getLatLng(), targetZoom, { animate: true })
   }
   
   const station = stations.find(s => s.name === name)

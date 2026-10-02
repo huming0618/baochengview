@@ -1,0 +1,11 @@
+{
+  "appId": "com.huming.baochengview",
+  "appName": "宝成慢车",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": true
+  }
+}

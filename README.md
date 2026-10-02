@@ -26,6 +26,23 @@ npm run build
 npm run preview
 ```
 
+
+## Android 离线 APK
+
+Capacitor 6 + 沿线离线底图（宝鸡↔成都走廊，z7–z11）。
+
+```bash
+npm install
+npm run seed-offline-tiles   # 可选：重下沿线瓦片
+npm run build:android
+cd android && ./gradlew assembleDebug
+```
+
+- App ID: `com.huming.baochengview`
+- 应用名: 宝成慢车
+- 瓦片加载顺序: 内置 offline-tiles → Cache API → 在线 Carto / Esri / OSM
+- 发布包: [android-offline-v1](https://github.com/huming0618/baochengview/releases/tag/android-offline-v1)
+
 ## 数据来源
 
 车站与线路数据来自 [OpenStreetMap](https://www.openstreetmap.org/)，基于 OSM 关系 [1912130](https://www.openstreetmap.org/relation/1912130)（宝成线）。
