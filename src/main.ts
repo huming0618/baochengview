@@ -14,6 +14,7 @@ import {
   flattenLineCoords,
   projectOntoCorridor,
   type CorridorStation,
+  type LineProjection,
 } from './geo.ts'
 import { createScaleView } from './scaleView.ts'
 
@@ -51,20 +52,29 @@ const app = document.querySelector<HTMLDivElement>('#app')!
 app.innerHTML = `
   <div id="map-container">
     <header class="map-header">
-      <div class="search-container">
-        <input type="text" id="search-input" placeholder="搜索车站..." autocomplete="off" />
-        <div id="search-results"></div>
+      <div class="header-top">
+        <div class="search-container">
+          <input type="text" id="search-input" placeholder="搜索车站..." autocomplete="off" />
+          <div id="search-results"></div>
+        </div>
+        <div class="view-toggle" role="group" aria-label="视图切换">
+          <button type="button" id="view-map-btn" class="view-toggle-btn active" aria-pressed="true">地图</button>
+          <button type="button" id="view-scale-btn" class="view-toggle-btn" aria-pressed="false">站序</button>
+        </div>
+        <button id="fit-line-btn" title="显示全线">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <path d="M9 3v18M15 3v18M3 9h18M3 15h18"/>
+          </svg>
+        </button>
       </div>
-      <div class="view-toggle" role="group" aria-label="视图切换">
-        <button type="button" id="view-map-btn" class="view-toggle-btn active" aria-pressed="true">地图</button>
-        <button type="button" id="view-scale-btn" class="view-toggle-btn" aria-pressed="false">站序</button>
+      <div id="location-status" class="location-status">
+        <span class="location-status-icon">📍</span>
+        <div class="location-status-content">
+          <span id="location-status-coords" class="location-status-coords">未定位</span>
+          <span id="location-status-corridor" class="location-status-corridor"></span>
+        </div>
       </div>
-      <button id="fit-line-btn" title="显示全线">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <rect x="3" y="3" width="18" height="18" rx="2"/>
-          <path d="M9 3v18M15 3v18M3 9h18M3 15h18"/>
-        </svg>
-      </button>
     </header>
     <div id="map"></div>
     <div id="scale-view" class="scale-view hidden" aria-label="宝成线站序刻度"></div>
@@ -161,11 +171,45 @@ let currentView: AppView = 'map'
 let locateCtrl: ReturnType<typeof createLocateControl> | null = null
 
 const scaleView = createScaleView(document.getElementById('scale-view')!)
+const locationStatusCoords = document.getElementById('location-status-coords')!
+const locationStatusCorridor = document.getElementById('location-status-corridor')!
+const locationStatusEl = document.getElementById('location-status')!
+
+function formatTime(): string {
+  const now = new Date()
+  return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`
+}
+
+function updateLocationStatus(proj: LineProjection | null, pos: LocatePosition | null) {
+  if (!pos) {
+    locationStatusCoords.textContent = '未定位'
+    locationStatusCorridor.textContent = ''
+    locationStatusEl.classList.remove('has-location', 'off-corridor')
+    return
+  }
+  
+  const timestamp = formatTime()
+  locationStatusCoords.textContent = `${pos.lat.toFixed(5)}°N, ${pos.lng.toFixed(5)}°E · ${timestamp}`
+  locationStatusEl.classList.add('has-location')
+  
+  if (!proj) {
+    locationStatusCorridor.textContent = '(偏离线路)'
+    locationStatusEl.classList.add('off-corridor')
+  } else {
+    locationStatusEl.classList.remove('off-corridor')
+    if (proj.atStation) {
+      locationStatusCorridor.textContent = `你在 ${proj.atStation.name} 附近`
+    } else {
+      locationStatusCorridor.textContent = `你在 ${proj.prev.name} ↔ ${proj.next.name} 之间`
+    }
+  }
+}
 
 function applyLocationToScale(pos: LocatePosition | null) {
   if (!pos || corridor.length < 2 || lineSegs.length === 0) {
     scaleView.setHasLocation(false)
     scaleView.setProjection(null)
+    updateLocationStatus(null, pos)
     return
   }
   const proj = projectOntoCorridor(
@@ -175,6 +219,7 @@ function applyLocationToScale(pos: LocatePosition | null) {
   )
   scaleView.setHasLocation(true)
   scaleView.setProjection(proj)
+  updateLocationStatus(proj, pos)
 }
 
 async function loadData() {
@@ -189,7 +234,6 @@ async function loadData() {
       style: lineStyle
     }).addTo(map)
 
-    // Flatten all MultiLineString parts for nearest-segment projection
     lineSegs = []
     for (const f of lineFeatures) {
       const coords = f.geometry.coordinates as [number, number][][]
@@ -223,7 +267,6 @@ async function loadData() {
     
     handleDeepLink()
 
-    // If locate already has a fix, paint scale
     if (locateCtrl) {
       applyLocationToScale(locateCtrl.getLastPosition())
     }
@@ -403,7 +446,6 @@ function setView(view: AppView) {
   scaleView.setVisible(!isMap)
   fitBtn.classList.toggle('hidden', !isMap)
 
-  // Keep Leaflet sizing correct when returning to map
   if (isMap) {
     requestAnimationFrame(() => map.invalidateSize())
   } else {
@@ -433,14 +475,17 @@ function setupControls() {
     onPosition: applyLocationToScale,
   })
   locateBtn.addEventListener('click', () => {
-    void locateCtrl!.toggle()
+    locateCtrl!.toggle().catch((e) => {
+      console.error('[Main] Locate toggle failed:', e)
+    })
   })
 
-  // Scale prompt button delegates to locate
   document.getElementById('scale-view')!.addEventListener('click', (e) => {
     const t = e.target as HTMLElement
     if (t.id === 'scale-locate-prompt' || t.closest('#scale-locate-prompt')) {
-      void locateCtrl!.toggle()
+      locateCtrl!.toggle().catch((err) => {
+        console.error('[Main] Scale locate toggle failed:', err)
+      })
     }
   })
 }
