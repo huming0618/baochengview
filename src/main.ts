@@ -75,7 +75,7 @@ L.control.attribution({
   position: 'bottomleft',
   prefix: false
 }).addTo(map).addAttribution(
-  '<a href="https://www.openstreetmap.org/copyright" target="_blank">© OSM</a> · CARTO / Esri'
+  '<a href="https://www.openstreetmap.org/copyright" target="_blank">© OSM</a> · CARTO'
 )
 
 const baseTiles = createCachedTileLayer(L, { maxZoom: 18 })

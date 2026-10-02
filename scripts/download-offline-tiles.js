@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 /**
  * Pre-seed dark basemap tiles for Baocheng Railway corridor (Chengdu–Baoji).
- * Prefer Esri World Dark Gray (Carto often watermark-blocked). Reject known bad hashes.
+ * Prefer Carto dark_all, then OSM mirrors (osm.fr / osm.de). Esri removed —
+ * public Canvas often returns "API key required" watermarks.
+ * Reject known bad hashes and post-pass identical tiny/blocked tiles.
  * Zoom z7–z11 along corridor bbox — keeps APK modest (~under 40MB).
  */
 import fs from 'fs';
@@ -22,17 +24,17 @@ const DELAY_MS = 140;
 const UA =
   'BaochengViewOfflineSeeder/1.0 (https://github.com/huming0618/baochengview; educational offline pack; contact via GitHub issues)';
 
-const ESRI_DARK = (z, x, y) =>
-  `https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/${z}/${y}/${x}`;
+const CARTO = (s, z, x, y) => `https://${s}.basemaps.cartocdn.com/dark_all/${z}/${x}/${y}.png`;
 const OSM_FR = (s, z, x, y) => `https://${s}.tile.openstreetmap.fr/osmfr/${z}/${x}/${y}.png`;
 const OSM_DE = (z, x, y) => `https://tile.openstreetmap.de/${z}/${x}/${y}.png`;
-const CARTO = (s, z, x, y) => `https://${s}.basemaps.cartocdn.com/dark_all/${z}/${x}/${y}.png`;
+const OSM_ORG = (s, z, x, y) => `https://${s}.tile.openstreetmap.org/${z}/${x}/${y}.png`;
 const SUBS = ['a', 'b', 'c'];
 
 const KNOWN_BAD_HASHES = new Set([
   '53041128e533b76ce8da6b7f1803e17731806ed3', // Carto dark watermark
   '5e572ff20f984b9437bf38d4364d32979a5e1570', // Carto light watermark
   '0cfb5f443183efc5921f61005aaa7f341fcfd143', // OSM.org blocked placeholder
+  '8e2044cbe09d0889949893981eb09f9f0007dc44', // Esri "API key required" JPEG
 ]);
 
 function lon2tile(lon, z) {
@@ -53,11 +55,12 @@ const hashCounts = new Map();
 
 async function fetchTile(z, x, y) {
   const s = SUBS[(x + y) % SUBS.length];
+  // Prefer Carto dark_all; fall back to OSM mirrors that work from CN/restricted nets.
   const urls = [
-    { url: ESRI_DARK(z, x, y), provider: 'esri' },
     { url: CARTO(s, z, x, y), provider: 'carto' },
     { url: OSM_FR(s, z, x, y), provider: 'osmfr' },
     { url: OSM_DE(z, x, y), provider: 'osmde' },
+    { url: OSM_ORG(s, z, x, y), provider: 'osm' },
   ];
   let lastErr;
   for (const { url, provider } of urls) {
@@ -84,6 +87,12 @@ async function fetchTile(z, x, y) {
         lastErr = new Error(`${provider} not-image`);
         continue;
       }
+      // Esri-style API-key watermarks are often small JPEGs; we no longer fetch Esri,
+      // but still reject tiny JPEGs that look like error tiles.
+      if (isJpeg && buf.length < 4000) {
+        lastErr = new Error(`${provider} suspicious-jpeg`);
+        continue;
+      }
       const h = sha1(buf);
       if (KNOWN_BAD_HASHES.has(h)) {
         lastErr = new Error(`${provider} known-bad-hash`);
@@ -99,6 +108,7 @@ async function fetchTile(z, x, y) {
 }
 
 async function main() {
+  const force = process.argv.includes('--force');
   const [south, west, north, east] = SEED_BBOX;
   const tileSet = new Map();
   const perZoom = {};
@@ -120,13 +130,23 @@ async function main() {
   }
 
   const jobs = [...tileSet.values()];
-  console.log(`Unique tiles: ${jobs.length}`);
+  console.log(`Unique tiles: ${jobs.length} force=${force}`);
   fs.mkdirSync(OUT, { recursive: true });
+
+  if (force) {
+    // Wipe prior seeds (often Esri JPEG/PNG) so we do not skip bad packs.
+    for (const ent of fs.readdirSync(OUT, { withFileTypes: true })) {
+      const p = path.join(OUT, ent.name);
+      if (ent.name === 'manifest.json') continue;
+      fs.rmSync(p, { recursive: true, force: true });
+    }
+    console.log('Cleared existing offline-tiles (kept manifest until rewrite)');
+  }
 
   let ok = 0;
   let fail = 0;
   let skipped = 0;
-  const providersUsed = { esri: 0, osmfr: 0, osmde: 0, carto: 0 };
+  const providersUsed = { carto: 0, osmfr: 0, osmde: 0, osm: 0 };
   let next = 0;
   const t0 = Date.now();
 
@@ -137,7 +157,7 @@ async function main() {
       const { z, x, y } = jobs[i];
       const destDir = path.join(OUT, String(z), String(x));
       const dest = path.join(destDir, `${y}.png`);
-      if (fs.existsSync(dest) && fs.statSync(dest).size > 100) {
+      if (!force && fs.existsSync(dest) && fs.statSync(dest).size > 100) {
         const existing = fs.readFileSync(dest);
         const h = sha1(existing);
         if (KNOWN_BAD_HASHES.has(h)) {
@@ -180,6 +200,7 @@ async function main() {
   let fileCount = 0;
   let bytes = 0;
   const onDiskHashes = new Map();
+  const hashToPaths = new Map();
   function walk(dir) {
     if (!fs.existsSync(dir)) return;
     for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -195,27 +216,55 @@ async function main() {
         fileCount++;
         bytes += buf.length;
         onDiskHashes.set(h, (onDiskHashes.get(h) || 0) + 1);
+        if (!hashToPaths.has(h)) hashToPaths.set(h, []);
+        hashToPaths.get(h).push(p);
       }
     }
   }
   walk(OUT);
 
+  // Reject mass-identical tiny tiles (blocked placeholders that slipped past known hashes).
+  // Real basemap tiles rarely share one hash across >15% of the pack unless ocean/empty.
+  // Only purge if the dominant hash is small (<4KB) AND covers >25% of files.
   const topDup = [...onDiskHashes.entries()].sort((a, b) => b[1] - a[1])[0];
+  if (topDup && topDup[1] > Math.max(20, fileCount * 0.25)) {
+    const samplePath = hashToPaths.get(topDup[0])?.[0];
+    const sampleSize = samplePath ? fs.statSync(samplePath).size : 0;
+    if (sampleSize > 0 && sampleSize < 4000) {
+      console.warn(
+        `Purging dominant tiny identical hash ${topDup[0].slice(0, 12)} count=${topDup[1]} size=${sampleSize}`,
+      );
+      for (const p of hashToPaths.get(topDup[0]) || []) {
+        try {
+          fs.unlinkSync(p);
+        } catch {
+          /* ignore */
+        }
+      }
+      // re-walk
+      fileCount = 0;
+      bytes = 0;
+      onDiskHashes.clear();
+      walk(OUT);
+    }
+  }
+
+  const topDup2 = [...onDiskHashes.entries()].sort((a, b) => b[1] - a[1])[0];
   console.log(
     'Top hash dup:',
-    topDup ? { hash: topDup[0].slice(0, 12), count: topDup[1] } : null,
+    topDup2 ? { hash: topDup2[0].slice(0, 12), count: topDup2[1] } : null,
     'uniqueHashes=',
     onDiskHashes.size,
   );
 
   const primary =
-    Object.entries(providersUsed).sort((a, b) => b[1] - a[1])[0]?.[0] || 'esri';
+    Object.entries(providersUsed).sort((a, b) => b[1] - a[1])[0]?.[0] || 'carto';
 
   const manifest = {
     generatedAt: new Date().toISOString(),
     zoom: { min: Z_MIN, max: Z_MAX },
     seedBbox: SEED_BBOX,
-    note: 'Baocheng Railway corridor Chengdu–Baoji (z7–z11). Seeded primarily from Esri World Dark Gray Base. Runtime tries Carto dark_all → Esri → OSM online.',
+    note: 'Baocheng Railway corridor Chengdu–Baoji (z7–z11). Seeded from Carto dark_all with OSM mirrors fallback. Esri removed (API-key watermarks). Runtime: Carto → OSM.',
     perZoom,
     uniqueRequested: jobs.length,
     downloadedOk: ok,
@@ -225,7 +274,7 @@ async function main() {
     primaryProvider: primary,
     uniqueHashesOnDisk: onDiskHashes.size,
     attribution:
-      'Basemap tiles © Esri (World Dark Gray) and/or © OpenStreetMap contributors / CARTO. Bundled for offline Baocheng View demo only.',
+      'Basemap tiles © OpenStreetMap contributors / CARTO. Bundled for offline Baocheng View demo only.',
     pathTemplate: 'offline-tiles/{z}/{x}/{y}.png',
     onDiskPngCount: fileCount,
     onDiskBytes: bytes,

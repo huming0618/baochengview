@@ -3,18 +3,24 @@
  * Tile load order:
  *  1) Bundled offline-tiles/{z}/{x}/{y}.png (absolute URL from WebView origin)
  *  2) Cache API (runtime prefetch)
- *  3) Network OSM, then Carto Positron fallback (if online)
+ *  3) Network Carto dark_all, then OSM (if online; Esri removed)
  *
  * Offline: map maxZoom capped to SEEDED_MAX_ZOOM so only seeded zooms are requested.
  */
 
-const CACHE_NAME = 'baochengview-carto-tiles-v1';
+const CACHE_NAME = 'baochengview-carto-tiles-v2';
 const OSM_TEMPLATE = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 const CARTO_TEMPLATE = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png';
-/** Esri z/y/x order */
-const ESRI_DARK_TEMPLATE = 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}';
 const OSM_SUBDOMAINS = ['a', 'b', 'c'];
 const CARTO_SUBDOMAINS = ['a', 'b', 'c', 'd'];
+
+/** Known blocked/watermark tiles (Carto, OSM.org, Esri API-key JPEG). */
+const BAD_TILE_SHA1 = new Set([
+  '53041128e533b76ce8da6b7f1803e17731806ed3', // Carto dark watermark
+  '5e572ff20f984b9437bf38d4364d32979a5e1570', // Carto light watermark
+  '0cfb5f443183efc5921f61005aaa7f341fcfd143', // OSM.org blocked placeholder
+  '8e2044cbe09d0889949893981eb09f9f0007dc44', // Esri "API key required" JPEG
+]);
 
 /** Bundled offline tiles cover this zoom range (see public/offline-tiles/manifest.json). */
 export const SEEDED_MIN_ZOOM = 7;
@@ -72,12 +78,29 @@ export function tileUrl(z, x, y, template = OSM_TEMPLATE, subdomains = OSM_SUBDO
 }
 
 export function networkTileUrls(z, x, y) {
-  const esri = ESRI_DARK_TEMPLATE.replace('{z}', z).replace('{y}', y).replace('{x}', x);
+  // Prefer Carto dark_all, then OSM. Esri removed (public Canvas often returns API-key watermarks).
   return [
     tileUrl(z, x, y, CARTO_TEMPLATE, CARTO_SUBDOMAINS),
-    esri,
     tileUrl(z, x, y, OSM_TEMPLATE, OSM_SUBDOMAINS),
   ];
+}
+
+async function sha1Hex(blob) {
+  const buf = await blob.arrayBuffer();
+  const hash = await crypto.subtle.digest('SHA-1', buf);
+  return [...new Uint8Array(hash)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+/** Reject tiny, known-watermark, or empty tiles before caching. */
+async function isUsableTileBlob(blob) {
+  if (!blob || blob.size < 100) return false;
+  try {
+    const h = await sha1Hex(blob);
+    if (BAD_TILE_SHA1.has(h)) return false;
+  } catch {
+    /* subtle unavailable — size check only */
+  }
+  return true;
 }
 
 export function isOnline() {
@@ -175,7 +198,7 @@ export function syncOfflineZoomLimits(map, tileLayer) {
   }
 }
 
-/** Create a Leaflet TileLayer that prefers bundled → Cache API → network (OSM then Carto). */
+/** Create a Leaflet TileLayer that prefers bundled → Cache API → network (Carto then OSM). */
 export function createCachedTileLayer(L, options = {}) {
   const TileLayerCached = L.TileLayer.extend({
     createTile(coords, done) {
@@ -254,7 +277,7 @@ export function createCachedTileLayer(L, options = {}) {
           }
         }
 
-        // (c) Network: OSM then Carto
+        // (c) Network: Carto then OSM (reject watermark hashes)
         if (!isOnline()) {
           finishMiss(new Error('offline-miss'));
           return;
@@ -266,7 +289,7 @@ export function createCachedTileLayer(L, options = {}) {
             const res = await fetch(netUrl, { mode: 'cors', credentials: 'omit' });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const blob = await res.blob();
-            if (!blob || blob.size < 50) throw new Error('tiny');
+            if (!(await isUsableTileBlob(blob))) throw new Error('bad-tile');
             await putCache(cache, netUrl, blob);
             await putCache(cache, url, blob);
             finishOk(blob, netUrl.includes('cartocdn') ? 'fromCarto' : 'fromNetwork');
@@ -376,6 +399,7 @@ export async function prefetchTiles(bounds, zMin = 12, zMax = 16, onProgress) {
                 const res = await fetch(netUrl, { mode: 'cors', credentials: 'omit' });
                 if (!res.ok) throw new Error(String(res.status));
                 const blob = await res.blob();
+                if (!(await isUsableTileBlob(blob))) throw new Error('bad-tile');
                 for (const u of urls) await putCache(cache, u, blob);
                 ok++;
                 saved = true;

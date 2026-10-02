@@ -40,8 +40,8 @@ cd android && ./gradlew assembleDebug
 
 - App ID: `com.huming.baochengview`
 - 应用名: 宝成慢车
-- 瓦片加载顺序: 内置 offline-tiles → Cache API → 在线 Carto / Esri / OSM
-- 发布包: [android-offline-v1](https://github.com/huming0618/baochengview/releases/tag/android-offline-v1)
+- 瓦片加载顺序: 内置 offline-tiles → Cache API → 在线 Carto dark_all → OSM（已移除 Esri）
+- 发布包: [android-offline-v2](https://github.com/huming0618/baochengview/releases/tag/android-offline-v2)
 
 ## 数据来源
 

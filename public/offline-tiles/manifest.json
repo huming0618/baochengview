@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-02T06:34:30.867Z",
+  "generatedAt": "2026-10-02T06:52:28.372Z",
   "zoom": {
     "min": 7,
     "max": 11
@@ -10,7 +10,7 @@
     34.53,
     107.38
   ],
-  "note": "Baocheng Railway corridor Chengdu–Baoji (z7–z11). Seeded primarily from Esri World Dark Gray Base. Runtime tries Carto dark_all → Esri → OSM online.",
+  "note": "Baocheng Railway corridor Chengdu–Baoji (z7–z11). Seeded from Carto dark_all with OSM mirrors fallback. Esri removed (API-key watermarks). Runtime: Carto → OSM.",
   "perZoom": {
     "7": {
       "x0": 100,
@@ -53,16 +53,16 @@
   "failed": 0,
   "skippedExisting": 0,
   "providersUsed": {
-    "esri": 819,
-    "osmfr": 0,
+    "carto": 0,
+    "osmfr": 819,
     "osmde": 0,
-    "carto": 0
+    "osm": 0
   },
-  "primaryProvider": "esri",
-  "uniqueHashesOnDisk": 751,
-  "attribution": "Basemap tiles © Esri (World Dark Gray) and/or © OpenStreetMap contributors / CARTO. Bundled for offline Baocheng View demo only.",
+  "primaryProvider": "osmfr",
+  "uniqueHashesOnDisk": 819,
+  "attribution": "Basemap tiles © OpenStreetMap contributors / CARTO. Bundled for offline Baocheng View demo only.",
   "pathTemplate": "offline-tiles/{z}/{x}/{y}.png",
   "onDiskPngCount": 819,
-  "onDiskBytes": 3208249,
-  "onDiskMB": 3.06
+  "onDiskBytes": 12186972,
+  "onDiskMB": 11.62
 }
