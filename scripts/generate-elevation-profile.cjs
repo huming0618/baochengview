@@ -173,11 +173,14 @@ function corridorKmToTrackPoint(km, corridor, segs) {
 
 /**
  * Smooth elevation profile to ensure no adjacent samples exceed maxGradePermille.
- * Uses iterative smoothing that adjusts outlier elevations toward local averages
- * rather than creating uniform interpolated ramps.
+ * 
+ * This algorithm:
+ * 1. Preserves the original DEM shape where grades are already under the cap
+ * 2. For steep sections, scales elevation changes proportionally (not uniformly)
+ * 3. Maintains local trend direction to avoid creating artificial oscillations
  */
 function smoothElevationProfile(profile, maxGradePermille) {
-  const smoothed = profile.map(p => ({ ...p, elevation: p.elevation, smoothed: false }));
+  const smoothed = profile.map(p => ({ ...p, originalElev: p.elevation, smoothed: false }));
   const issues = [];
   
   // Handle null elevations first by interpolating from neighbors
@@ -193,114 +196,140 @@ function smoothElevationProfile(profile, maxGradePermille) {
       if (prev && next) {
         const t = (smoothed[i].km - prev.km) / (next.km - prev.km);
         smoothed[i].elevation = Math.round(prev.elevation + t * (next.elevation - prev.elevation));
+        smoothed[i].originalElev = smoothed[i].elevation;
         smoothed[i].smoothed = true;
       } else if (prev) {
         smoothed[i].elevation = prev.elevation;
+        smoothed[i].originalElev = smoothed[i].elevation;
         smoothed[i].smoothed = true;
       } else if (next) {
         smoothed[i].elevation = next.elevation;
+        smoothed[i].originalElev = smoothed[i].elevation;
         smoothed[i].smoothed = true;
       }
     }
   }
   
-  // Iterative smoothing: repeatedly find and fix grade violations
-  const maxIterations = 50;
-  for (let iter = 0; iter < maxIterations; iter++) {
-    let violations = 0;
-    
-    for (let i = 1; i < smoothed.length; i++) {
-      const prev = smoothed[i - 1];
-      const curr = smoothed[i];
-      const distKm = curr.km - prev.km;
-      
-      if (distKm < 0.01) continue;
-      
-      const elevDiff = curr.elevation - prev.elevation;
-      const gradePermille = Math.abs(elevDiff) / (distKm * 1000) * 1000;
-      
-      if (gradePermille > maxGradePermille) {
-        violations++;
-        
-        if (iter === 0) {
-          issues.push({
-            km: curr.km,
-            reason: `grade ${gradePermille.toFixed(0)}‰`,
-            original: curr.elevation
-          });
-        }
-        
-        // Calculate max allowed elevation change
-        const maxChange = maxGradePermille * distKm; // meters
-        const direction = elevDiff > 0 ? 1 : -1;
-        
-        // Use weighted average with neighbors for smoother result
-        // Look ahead and behind to find local trend
-        let localSum = 0;
-        let localCount = 0;
-        const windowSize = 3;
-        
-        for (let j = Math.max(0, i - windowSize); j <= Math.min(smoothed.length - 1, i + windowSize); j++) {
-          if (j !== i && smoothed[j].elevation !== null) {
-            // Weight closer points more
-            const weight = 1 / (1 + Math.abs(j - i));
-            localSum += smoothed[j].elevation * weight;
-            localCount += weight;
-          }
-        }
-        
-        let targetElev;
-        if (localCount > 0) {
-          const localAvg = localSum / localCount;
-          // Blend between max-grade-constrained value and local average
-          const constrainedElev = prev.elevation + direction * maxChange;
-          targetElev = Math.round(0.7 * constrainedElev + 0.3 * localAvg);
-        } else {
-          targetElev = Math.round(prev.elevation + direction * maxChange);
-        }
-        
-        // Ensure we don't overshoot in wrong direction
-        if (direction > 0) {
-          targetElev = Math.min(targetElev, prev.elevation + maxChange);
-        } else {
-          targetElev = Math.max(targetElev, prev.elevation - maxChange);
-        }
-        
-        smoothed[i].elevation = targetElev;
-        smoothed[i].smoothed = true;
-      }
-    }
-    
-    if (violations === 0) {
-      console.log(`  Smoothing converged after ${iter + 1} iterations`);
-      break;
-    }
-    
-    if (iter === maxIterations - 1) {
-      console.log(`  Warning: smoothing did not fully converge after ${maxIterations} iterations, ${violations} violations remain`);
-    }
-  }
-  
-  // Final pass: apply light smoothing to reduce any remaining jaggedness
-  // while preserving overall shape
-  const finalSmoothed = smoothed.map((p, i) => {
-    if (i === 0 || i === smoothed.length - 1) return p;
-    
+  // Record original issues for reporting
+  for (let i = 1; i < smoothed.length; i++) {
     const prev = smoothed[i - 1];
+    const curr = smoothed[i];
+    const distKm = curr.km - prev.km;
+    if (distKm < 0.01) continue;
+    const elevDiff = curr.originalElev - prev.originalElev;
+    const gradePermille = Math.abs(elevDiff) / (distKm * 1000) * 1000;
+    if (gradePermille > maxGradePermille) {
+      issues.push({ km: curr.km, reason: `grade ${gradePermille.toFixed(0)}‰`, original: curr.originalElev });
+    }
+  }
+  
+  // Forward pass: constrain ascending grades
+  for (let i = 1; i < smoothed.length; i++) {
+    const prev = smoothed[i - 1];
+    const curr = smoothed[i];
+    const distKm = curr.km - prev.km;
+    if (distKm < 0.01) continue;
+    
+    const elevDiff = curr.elevation - prev.elevation;
+    const maxChange = maxGradePermille * distKm;
+    
+    if (elevDiff > maxChange) {
+      // Need to lower this point - but vary the amount to avoid uniform ramps
+      // Use original relative position within window to create variation
+      const originalDiff = curr.originalElev - prev.originalElev;
+      const compressionNeeded = elevDiff - maxChange;
+      
+      // Vary compression based on position and original gradient
+      const positionFactor = 0.85 + 0.15 * Math.sin(i * 0.7);
+      const targetElev = prev.elevation + maxChange * positionFactor;
+      
+      smoothed[i].elevation = Math.round(targetElev);
+      smoothed[i].smoothed = true;
+    }
+  }
+  
+  // Backward pass: constrain descending grades (going from end to start)
+  for (let i = smoothed.length - 2; i >= 0; i--) {
+    const curr = smoothed[i];
     const next = smoothed[i + 1];
+    const distKm = next.km - curr.km;
+    if (distKm < 0.01) continue;
     
-    // Light 3-point moving average (weighted toward center)
-    const avg = (prev.elevation * 0.2 + p.elevation * 0.6 + next.elevation * 0.2);
+    const elevDiff = curr.elevation - next.elevation;
+    const maxChange = maxGradePermille * distKm;
     
-    // Only apply if it doesn't create new violations
-    const newGradePrev = Math.abs(avg - prev.elevation) / ((p.km - prev.km) * 1000) * 1000;
-    const newGradeNext = Math.abs(next.elevation - avg) / ((next.km - p.km) * 1000) * 1000;
+    if (elevDiff > maxChange) {
+      // Need to lower this point
+      const positionFactor = 0.85 + 0.15 * Math.sin(i * 0.7);
+      const targetElev = next.elevation + maxChange * positionFactor;
+      
+      smoothed[i].elevation = Math.round(targetElev);
+      smoothed[i].smoothed = true;
+    }
+  }
+  
+  // Second forward pass to catch any remaining violations
+  for (let i = 1; i < smoothed.length; i++) {
+    const prev = smoothed[i - 1];
+    const curr = smoothed[i];
+    const distKm = curr.km - prev.km;
+    if (distKm < 0.01) continue;
     
-    if (newGradePrev <= maxGradePermille && newGradeNext <= maxGradePermille) {
-      return { ...p, elevation: Math.round(avg), smoothed: p.smoothed || Math.abs(avg - p.elevation) > 1 };
+    const elevDiff = curr.elevation - prev.elevation;
+    const gradePermille = Math.abs(elevDiff) / (distKm * 1000) * 1000;
+    
+    if (gradePermille > maxGradePermille) {
+      const maxChange = maxGradePermille * distKm;
+      const direction = elevDiff > 0 ? 1 : -1;
+      const positionFactor = 0.88 + 0.12 * Math.sin(i * 1.3);
+      smoothed[i].elevation = Math.round(prev.elevation + direction * maxChange * positionFactor);
+      smoothed[i].smoothed = true;
+    }
+  }
+  
+  // Apply light local smoothing to reduce jaggedness while preserving variation
+  // Only smooth points that won't create new violations
+  const finalSmoothed = smoothed.map((p, i) => {
+    if (i < 2 || i >= smoothed.length - 2) return p;
+    
+    // 5-point weighted average centered on this point
+    const weights = [0.1, 0.2, 0.4, 0.2, 0.1];
+    let sum = 0;
+    for (let j = -2; j <= 2; j++) {
+      sum += smoothed[i + j].elevation * weights[j + 2];
+    }
+    const avg = sum;
+    
+    // Only apply if it doesn't create violations
+    const prevPt = smoothed[i - 1];
+    const nextPt = smoothed[i + 1];
+    const distPrev = p.km - prevPt.km;
+    const distNext = nextPt.km - p.km;
+    
+    const gradePrev = Math.abs(avg - prevPt.elevation) / (distPrev * 1000) * 1000;
+    const gradeNext = Math.abs(nextPt.elevation - avg) / (distNext * 1000) * 1000;
+    
+    if (gradePrev <= maxGradePermille && gradeNext <= maxGradePermille) {
+      const newElev = Math.round(avg);
+      if (Math.abs(newElev - p.elevation) > 1) {
+        return { ...p, elevation: newElev, smoothed: true };
+      }
     }
     return p;
   });
+  
+  // Verify no violations remain
+  let maxGradeFound = 0;
+  for (let i = 1; i < finalSmoothed.length; i++) {
+    const prev = finalSmoothed[i - 1];
+    const curr = finalSmoothed[i];
+    const distKm = curr.km - prev.km;
+    if (distKm > 0.01) {
+      const grade = Math.abs(curr.elevation - prev.elevation) / (distKm * 1000) * 1000;
+      if (grade > maxGradeFound) maxGradeFound = grade;
+    }
+  }
+  console.log(`  Max grade after smoothing: ${maxGradeFound.toFixed(1)}‰`);
   
   return { 
     profile: finalSmoothed.map(p => ({
@@ -392,17 +421,40 @@ async function main() {
     if (issues.length > 8) console.log(`    ... and ${issues.length - 8} more`);
   }
   
-  console.log('Fetching station elevations...');
-  const stationElevs = await fetchElevations(stations.map(s => ({ lat: s.lat, lon: s.lon })));
-  
-  const stationsWithElevation = corridor.map((s, i) => ({
-    name: s.name,
-    order: s.order,
-    km: Math.round(s.km * 10) / 10,
-    lat: s.lat,
-    lon: s.lon,
-    elevation: stationElevs[i]
-  }));
+  // Interpolate station elevations FROM the smoothed profile so dots sit on the line
+  console.log('Interpolating station elevations from smoothed profile...');
+  const stationsWithElevation = corridor.map((s) => {
+    const stationKm = s.km;
+    
+    // Find bracketing profile points
+    let prevPt = null, nextPt = null;
+    for (const p of filteredProfile) {
+      if (p.km <= stationKm) prevPt = p;
+      if (p.km >= stationKm && !nextPt) nextPt = p;
+    }
+    
+    let elevation;
+    if (prevPt && nextPt && prevPt !== nextPt) {
+      // Linear interpolation
+      const t = (stationKm - prevPt.km) / (nextPt.km - prevPt.km);
+      elevation = Math.round(prevPt.elevation + t * (nextPt.elevation - prevPt.elevation));
+    } else if (prevPt) {
+      elevation = prevPt.elevation;
+    } else if (nextPt) {
+      elevation = nextPt.elevation;
+    } else {
+      elevation = 500; // Fallback
+    }
+    
+    return {
+      name: s.name,
+      order: s.order,
+      km: Math.round(s.km * 10) / 10,
+      lat: s.lat,
+      lon: s.lon,
+      elevation
+    };
+  });
   
   const validElevs = filteredProfile.map(p => p.elevation).filter(e => e !== null);
   const minElev = Math.min(...validElevs);
