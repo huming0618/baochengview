@@ -59,15 +59,18 @@ cd android && ./gradlew assembleDebug
 海拔剖面数据来自 [Open-Meteo Elevation API](https://open-meteo.com/en/docs/elevation-api)，基于 SRTM 90m 数字高程模型。
 
 - 数据文件：`public/elevation-profile.json`
-- 采样方式：沿宝鸡→成都站序方向，每两站之间插值3个采样点
-- 全线约 546 km，海拔范围 468m（成都平原）至 1580m（秦岭山区）
-- 若个别采样点 API 请求失败，使用相邻点线性插值（已在数据中标记 `interpolated: true`）
+- 采样方式：沿走廊每 1.5 km 采样一个点，投影到实际轨道 MultiLineString 上再查询海拔
+- 里程体系：与定位投影一致（站间直线距离插值），确保「我」标记在站序视图和海拔视图位置相同
+- 全线约 546 km，海拔范围约 457m（成都平原）至 1377m（秦岭山区）
+- 过滤规则：坡度 > 45‰ 的点被判定为 DEM 偏差，使用相邻点线性插值（已在数据中标记 `interpolated: true`）
 - 数据随代码提交，应用可完全离线工作
 
 重新生成海拔数据：
 ```bash
 node scripts/generate-elevation-profile.cjs
 ```
+
+**注意**：秦岭段（约 km 15–30）有部分点因 SRTM 90m 分辨率在山区的精度限制被插值处理，坡度仍在合理范围内（≤45‰）。
 
 ### 车站列表（北→南）
 
