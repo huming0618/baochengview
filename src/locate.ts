@@ -166,7 +166,10 @@ export function createLocateControl(
   }
 
   function onWatchPosition(lat: number, lng: number, accuracy: number) {
+    // Always update marker and emit position (for status strip) regardless of follow mode
     updateMarker(lat, lng, accuracy)
+    
+    // Only auto-pan if actively following
     if (follow && state === 'following') {
       programmaticMove = true
       map.panTo(lastLatLng!, { animate: true })
@@ -192,6 +195,7 @@ export function createLocateControl(
         const pos = await Geolocation.getCurrentPosition({
           enableHighAccuracy: false,
           timeout: 8000,
+          maximumAge: 0,
         })
         return {
           lat: pos.coords.latitude,
@@ -205,6 +209,7 @@ export function createLocateControl(
         const pos = await Geolocation.getCurrentPosition({
           enableHighAccuracy: true,
           timeout: 10000,
+          maximumAge: 0,
         })
         return {
           lat: pos.coords.latitude,
@@ -224,7 +229,7 @@ export function createLocateControl(
             accuracy: pos.coords.accuracy ?? 0,
           }),
           (err) => reject(err),
-          { enableHighAccuracy: false, timeout: 8000, maximumAge: 30000 }
+          { enableHighAccuracy: false, timeout: 8000, maximumAge: 0 }
         )
       })
     }
@@ -233,15 +238,17 @@ export function createLocateControl(
   function startWatchForFollow() {
     if (watchId !== null) return
     
+    console.log('[Locate] Starting watch for continuous updates')
     try {
       if (Capacitor.isNativePlatform()) {
         Geolocation.watchPosition(
-          { enableHighAccuracy: true, timeout: 30000 },
+          { enableHighAccuracy: true, timeout: 30000, minimumUpdateInterval: 1000 },
           (position, err) => {
             if (err || !position) {
               console.warn('[Locate] Watch error:', err)
               return
             }
+            console.log('[Locate] Watch update:', position.coords.latitude, position.coords.longitude)
             onWatchPosition(
               position.coords.latitude,
               position.coords.longitude,
@@ -250,12 +257,14 @@ export function createLocateControl(
           }
         ).then((id) => {
           watchId = id
+          console.log('[Locate] Watch started with id:', id)
         }).catch((e) => {
           console.warn('[Locate] Failed to start watch:', e)
         })
       } else {
         watchId = navigator.geolocation.watchPosition(
           (position) => {
+            console.log('[Locate] Watch update:', position.coords.latitude, position.coords.longitude)
             onWatchPosition(
               position.coords.latitude,
               position.coords.longitude,
@@ -263,8 +272,9 @@ export function createLocateControl(
             )
           },
           (err) => console.warn('[Locate] Watch error:', err),
-          { enableHighAccuracy: true, maximumAge: 2000, timeout: 30000 }
+          { enableHighAccuracy: true, maximumAge: 0, timeout: 30000 }
         )
+        console.log('[Locate] Browser watch started with id:', watchId)
       }
     } catch (e) {
       console.warn('[Locate] startWatchForFollow failed:', e)
