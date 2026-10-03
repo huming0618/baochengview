@@ -1,20 +1,21 @@
 {
-  "source": "OpenStreetMap + geographic references",
-  "generated": "2026-10-03T00:30:00.000Z",
+  "source": "OpenStreetMap + geographic references, aligned to station chainage",
+  "generated": "2026-10-03T00:45:00.000Z",
   "notes": {
     "description": "Major rivers crossed or followed by the Baocheng railway from Baoji to Chengdu",
-    "kmSystem": "Corridor-km consistent with station scale and elevation profile"
+    "kmSystem": "Corridor-km from station scale (station-to-station interpolation)"
   },
   "summary": {
     "totalKm": 545.7,
-    "riverCount": 18,
+    "riverCount": 20,
     "uniqueRivers": 12
   },
   "rivers": [
     {
       "name": "渭河",
       "km": 2.5,
-      "desc": "宝鸡市区，黄河最大支流"
+      "desc": "宝鸡市区，黄河最大支流",
+      "alignedTo": "宝鸡站东侧"
     },
     {
       "name": "清姜河",
@@ -23,8 +24,9 @@
     },
     {
       "name": "清姜河",
-      "km": 32,
-      "desc": "秦岭站附近"
+      "km": 29.4,
+      "desc": "秦岭站",
+      "alignedTo": "秦岭 29.4 km"
     },
     {
       "name": "嘉陵江上游",
@@ -33,83 +35,99 @@
     },
     {
       "name": "嘉陵江",
-      "km": 72,
-      "desc": "凤州镇，铁路开始沿江而行"
+      "km": 67.4,
+      "desc": "凤州站，铁路开始沿江而行",
+      "alignedTo": "凤州 67.4 km"
     },
     {
       "name": "嘉陵江",
-      "km": 98,
-      "desc": "两当附近"
+      "km": 97.2,
+      "desc": "李家河站附近",
+      "alignedTo": "李家河 97.2 km"
     },
     {
       "name": "嘉陵江",
-      "km": 125,
-      "desc": "徽县境内"
+      "km": 119.4,
+      "desc": "徽县站",
+      "alignedTo": "徽县 119.4 km"
     },
     {
       "name": "西汉水",
-      "km": 148,
-      "desc": "略阳站，西汉水汇入嘉陵江"
+      "km": 170.9,
+      "desc": "略阳站，西汉水汇入嘉陵江",
+      "alignedTo": "略阳 170.9 km"
     },
     {
       "name": "嘉陵江",
-      "km": 168,
-      "desc": "略阳至阳平关段"
+      "km": 188.8,
+      "desc": "乐素河站附近",
+      "alignedTo": "乐素河 188.8 km"
     },
     {
       "name": "嘉陵江",
-      "km": 195,
-      "desc": "阳平关附近"
+      "km": 215.8,
+      "desc": "阳平关站",
+      "alignedTo": "阳平关 215.8 km"
     },
     {
       "name": "嘉陵江",
-      "km": 220,
-      "desc": "宁强至广元段"
+      "km": 240.9,
+      "desc": "大滩站附近",
+      "alignedTo": "大滩 240.9 km"
     },
     {
       "name": "白龙江",
-      "km": 248,
-      "desc": "广元昭化，白龙江汇入嘉陵江"
+      "km": 297.7,
+      "desc": "昭化站，白龙江汇入嘉陵江",
+      "alignedTo": "昭化 297.7 km"
     },
     {
       "name": "嘉陵江",
-      "km": 275,
-      "desc": "昭化古城"
+      "km": 300,
+      "desc": "昭化古城南",
+      "alignedTo": "昭化站后 ~2 km"
     },
     {
       "name": "清江河",
-      "km": 310,
-      "desc": "剑阁境内"
+      "km": 314.3,
+      "desc": "沙溪坝站",
+      "alignedTo": "沙溪坝 314.3 km"
     },
     {
       "name": "梓潼江",
-      "km": 355,
-      "desc": "梓潼县境"
+      "km": 360.2,
+      "desc": "马角坝站",
+      "alignedTo": "马角坝 360.2 km"
     },
     {
       "name": "涪江",
-      "km": 395,
-      "desc": "绵阳市区，长江重要支流"
+      "km": 441.1,
+      "desc": "绵阳站，长江重要支流",
+      "alignedTo": "绵阳 441.1 km"
     },
     {
       "name": "凯江",
-      "km": 440,
-      "desc": "德阳境内"
+      "km": 486.3,
+      "desc": "德阳站",
+      "alignedTo": "德阳 486.3 km"
     },
     {
       "name": "沱江",
-      "km": 485,
-      "desc": "广汉附近，成都平原"
+      "km": 510.5,
+      "desc": "广汉站",
+      "alignedTo": "广汉 510.5 km"
     },
     {
       "name": "毗河",
-      "km": 515,
-      "desc": "新都区"
+      "km": 525,
+      "desc": "新都区",
+      "alignedTo": "广汉-成都段中点"
     },
     {
       "name": "府河",
-      "km": 542,
-      "desc": "成都站，锦江水系"
+      "km": 545.7,
+      "desc": "成都站，锦江水系",
+      "alignedTo": "成都 545.7 km"
     }
   ]
 }
