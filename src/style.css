@@ -768,17 +768,55 @@ html, body {
   opacity: 0.8;
 }
 
-/* Vertical orientation (default) */
+/* Vertical orientation (default) - rail centered horizontally */
 .scale-vertical .scale-rail {
   top: 0;
   bottom: 0;
-  left: 5px;
+  left: 50%;
   width: 4px;
+  transform: translateX(-50%);
 }
 
 .scale-vertical .scale-highlight {
-  left: 2px;
+  left: 50%;
   width: 10px;
+  transform: translateX(-50%);
+}
+
+.scale-vertical .scale-tick {
+  left: 50%;
+  right: auto;
+  transform: translate(-50%, -50%);
+  flex-direction: column;
+  align-items: center;
+  padding-left: 0;
+  gap: 4px;
+}
+
+.scale-vertical .scale-tick-mark {
+  position: static;
+  width: 24px;
+  height: 2px;
+}
+
+.scale-vertical .scale-tick.endpoint .scale-tick-mark {
+  width: 32px;
+  height: 3px;
+}
+
+.scale-vertical .scale-tick-name {
+  font-size: 13px;
+}
+
+.scale-vertical .scale-tick-km {
+  font-size: 10px;
+}
+
+.scale-vertical .scale-me {
+  left: 50%;
+  transform: translate(-50%, -50%);
+  flex-direction: column;
+  align-items: center;
 }
 
 /* Horizontal orientation (landscape short height) */
@@ -1233,4 +1271,366 @@ html, body {
 .elev-end-label,
 .elev-footer {
   font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif;
+}
+
+/* River view - shows rivers along the Baocheng railway */
+.river-view {
+  position: absolute;
+  inset: 0;
+  z-index: 500;
+  background: var(--bg-dark);
+  display: flex;
+  flex-direction: column;
+  padding-top: 64px;
+  padding-bottom: 72px;
+}
+
+.river-view.hidden {
+  display: none;
+}
+
+.river-shell {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 0 12px 8px;
+}
+
+.river-status {
+  flex-shrink: 0;
+  margin: 0 0 10px;
+  padding: 12px 14px;
+  background: var(--bg-surface);
+  border-radius: var(--radius);
+  border: 1px solid rgba(64, 164, 223, 0.35);
+  box-shadow: var(--shadow);
+}
+
+.river-status-main {
+  font-size: 15px;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+.river-status-main strong {
+  color: #40a4df;
+}
+
+.river-status-sub {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.river-locate-prompt {
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: #2A93EE;
+  font-family: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+  padding: 0;
+}
+
+.river-locate-prompt:hover {
+  color: #5bb0f5;
+  text-decoration: underline;
+}
+
+.river-loading {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.river-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: var(--radius);
+  background: var(--bg-surface);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.river-track {
+  position: relative;
+  margin: 0;
+  min-height: 100%;
+}
+
+.river-plot {
+  position: absolute;
+  inset: 20px 12px;
+}
+
+.river-rail {
+  position: absolute;
+  background: rgba(64, 164, 223, 0.3);
+  border-radius: 2px;
+  z-index: 1;
+}
+
+.river-highlight {
+  position: absolute;
+  background: rgba(42, 147, 238, 0.2);
+  border-radius: 3px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.river-highlight.hidden {
+  display: none;
+}
+
+.river-ticks {
+  position: relative;
+  z-index: 3;
+  width: 100%;
+  height: 100%;
+}
+
+.river-tick {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transform: translateY(-50%);
+  left: 0;
+  right: 0;
+  padding-left: 28px;
+}
+
+.river-tick-mark {
+  position: absolute;
+  left: 0;
+  font-size: 14px;
+  color: #40a4df;
+  line-height: 1;
+}
+
+.river-tick.near-me .river-tick-name {
+  color: #2A93EE;
+  font-weight: 600;
+}
+
+.river-tick-name {
+  font-size: 14px;
+  color: #40a4df;
+  white-space: nowrap;
+}
+
+.river-tick-km {
+  font-size: 11px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.river-tick-desc {
+  font-size: 10px;
+  color: var(--text-secondary);
+  opacity: 0.7;
+  white-space: nowrap;
+}
+
+.river-me {
+  position: absolute;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transform: translate(-4px, -50%);
+  left: 0;
+  pointer-events: none;
+}
+
+.river-me.hidden {
+  display: none;
+}
+
+.river-me-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #2A93EE;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 3px rgba(42, 147, 238, 0.35);
+  flex-shrink: 0;
+}
+
+.river-me-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #2A93EE;
+  background: rgba(26, 26, 46, 0.9);
+  padding: 2px 6px;
+  border-radius: 10px;
+  border: 1px solid rgba(42, 147, 238, 0.5);
+}
+
+.river-ends {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+  padding: 0 4px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.river-end-mid {
+  color: #40a4df;
+  opacity: 0.9;
+}
+
+/* Vertical orientation (default) - rail centered horizontally */
+.river-vertical .river-rail {
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 4px;
+  transform: translateX(-50%);
+}
+
+.river-vertical .river-highlight {
+  left: 50%;
+  width: 10px;
+  transform: translateX(-50%);
+}
+
+.river-vertical .river-tick {
+  left: 50%;
+  right: auto;
+  transform: translate(-50%, -50%);
+  flex-direction: column;
+  align-items: center;
+  padding-left: 0;
+  gap: 2px;
+}
+
+.river-vertical .river-tick-mark {
+  position: static;
+  font-size: 16px;
+}
+
+.river-vertical .river-tick-name {
+  font-size: 13px;
+}
+
+.river-vertical .river-tick-km {
+  font-size: 10px;
+}
+
+.river-vertical .river-tick-desc {
+  font-size: 9px;
+}
+
+.river-vertical .river-me {
+  left: 50%;
+  transform: translate(-50%, -50%);
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Horizontal orientation (landscape) */
+.river-horizontal .river-shell {
+  padding-bottom: 4px;
+}
+
+.river-horizontal .river-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.river-horizontal .river-track {
+  height: 140px;
+  margin: 0;
+}
+
+.river-horizontal .river-plot {
+  inset: 16px 28px;
+}
+
+.river-horizontal .river-rail {
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 4px;
+  margin-top: -2px;
+}
+
+.river-horizontal .river-highlight {
+  top: calc(50% - 5px);
+  height: 10px;
+}
+
+.river-horizontal .river-tick {
+  top: 50%;
+  left: auto;
+  right: auto;
+  bottom: auto;
+  transform: translate(-50%, 0);
+  flex-direction: column;
+  align-items: center;
+  padding-left: 0;
+  padding-top: 20px;
+  width: 72px;
+  text-align: center;
+  gap: 2px;
+}
+
+.river-horizontal .river-tick-mark {
+  left: 50%;
+  top: 0;
+  transform: translateX(-50%);
+  position: absolute;
+}
+
+.river-horizontal .river-tick-name {
+  font-size: 12px;
+}
+
+.river-horizontal .river-tick-desc {
+  display: none;
+}
+
+.river-horizontal .river-me {
+  top: 50%;
+  left: auto;
+  transform: translate(-50%, -120%);
+  flex-direction: column;
+}
+
+.river-view,
+.river-status,
+.river-tick-name,
+.river-me-label,
+.river-locate-prompt {
+  font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif;
+}
+
+@media (min-width: 600px) {
+  .river-view {
+    padding-top: 72px;
+  }
+  .river-shell {
+    max-width: 480px;
+    margin: 0 auto;
+    width: 100%;
+  }
+  .river-horizontal .river-shell {
+    max-width: none;
+  }
+}
+
+#map-container[data-view="river"] .locate-btn {
+  bottom: 16px;
+}
+
+#map-container[data-view="river"] .leaflet-control-zoom,
+#map-container[data-view="river"] .leaflet-control-attribution {
+  display: none !important;
 }

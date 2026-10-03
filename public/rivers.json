@@ -1,0 +1,115 @@
+{
+  "source": "OpenStreetMap + geographic references",
+  "generated": "2026-10-03T00:30:00.000Z",
+  "notes": {
+    "description": "Major rivers crossed or followed by the Baocheng railway from Baoji to Chengdu",
+    "kmSystem": "Corridor-km consistent with station scale and elevation profile"
+  },
+  "summary": {
+    "totalKm": 545.7,
+    "riverCount": 18,
+    "uniqueRivers": 12
+  },
+  "rivers": [
+    {
+      "name": "渭河",
+      "km": 2.5,
+      "desc": "宝鸡市区，黄河最大支流"
+    },
+    {
+      "name": "清姜河",
+      "km": 18,
+      "desc": "清姜峡入口"
+    },
+    {
+      "name": "清姜河",
+      "km": 32,
+      "desc": "秦岭站附近"
+    },
+    {
+      "name": "嘉陵江上游",
+      "km": 58,
+      "desc": "凤县境内，嘉陵江源头区"
+    },
+    {
+      "name": "嘉陵江",
+      "km": 72,
+      "desc": "凤州镇，铁路开始沿江而行"
+    },
+    {
+      "name": "嘉陵江",
+      "km": 98,
+      "desc": "两当附近"
+    },
+    {
+      "name": "嘉陵江",
+      "km": 125,
+      "desc": "徽县境内"
+    },
+    {
+      "name": "西汉水",
+      "km": 148,
+      "desc": "略阳站，西汉水汇入嘉陵江"
+    },
+    {
+      "name": "嘉陵江",
+      "km": 168,
+      "desc": "略阳至阳平关段"
+    },
+    {
+      "name": "嘉陵江",
+      "km": 195,
+      "desc": "阳平关附近"
+    },
+    {
+      "name": "嘉陵江",
+      "km": 220,
+      "desc": "宁强至广元段"
+    },
+    {
+      "name": "白龙江",
+      "km": 248,
+      "desc": "广元昭化，白龙江汇入嘉陵江"
+    },
+    {
+      "name": "嘉陵江",
+      "km": 275,
+      "desc": "昭化古城"
+    },
+    {
+      "name": "清江河",
+      "km": 310,
+      "desc": "剑阁境内"
+    },
+    {
+      "name": "梓潼江",
+      "km": 355,
+      "desc": "梓潼县境"
+    },
+    {
+      "name": "涪江",
+      "km": 395,
+      "desc": "绵阳市区，长江重要支流"
+    },
+    {
+      "name": "凯江",
+      "km": 440,
+      "desc": "德阳境内"
+    },
+    {
+      "name": "沱江",
+      "km": 485,
+      "desc": "广汉附近，成都平原"
+    },
+    {
+      "name": "毗河",
+      "km": 515,
+      "desc": "新都区"
+    },
+    {
+      "name": "府河",
+      "km": 542,
+      "desc": "成都站，锦江水系"
+    }
+  ]
+}
