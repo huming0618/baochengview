@@ -768,7 +768,7 @@ html, body {
   opacity: 0.8;
 }
 
-/* Vertical orientation (default) - rail centered horizontally */
+/* Vertical orientation (portrait) - rail centered, names to the RIGHT of ticks */
 .scale-vertical .scale-rail {
   top: 0;
   bottom: 0;
@@ -784,39 +784,50 @@ html, body {
 }
 
 .scale-vertical .scale-tick {
-  left: 50%;
+  left: calc(50% + 16px);
   right: auto;
-  transform: translate(-50%, -50%);
-  flex-direction: column;
+  transform: translateY(-50%);
+  flex-direction: row;
   align-items: center;
   padding-left: 0;
-  gap: 4px;
+  gap: 6px;
 }
 
 .scale-vertical .scale-tick-mark {
-  position: static;
-  width: 24px;
+  position: absolute;
+  left: -16px;
+  width: 14px;
   height: 2px;
+  flex-shrink: 0;
 }
 
 .scale-vertical .scale-tick.endpoint .scale-tick-mark {
-  width: 32px;
+  width: 18px;
   height: 3px;
+  left: -18px;
 }
 
 .scale-vertical .scale-tick-name {
   font-size: 13px;
+  white-space: nowrap;
 }
 
 .scale-vertical .scale-tick-km {
   font-size: 10px;
+  white-space: nowrap;
 }
 
 .scale-vertical .scale-me {
-  left: 50%;
-  transform: translate(-50%, -50%);
-  flex-direction: column;
+  left: calc(50% + 16px);
+  transform: translateY(-50%);
+  flex-direction: row;
   align-items: center;
+  gap: 6px;
+}
+
+.scale-vertical .scale-me-dot {
+  position: absolute;
+  left: -23px;
 }
 
 /* Horizontal orientation (landscape short height) */
@@ -851,30 +862,32 @@ html, body {
 }
 
 .scale-horizontal .scale-tick {
-  top: 50%;
+  top: calc(50% + 12px);
   left: auto;
   right: auto;
   bottom: auto;
-  transform: translate(-50%, 0);
+  transform: translateX(-50%);
   flex-direction: column;
   align-items: center;
   padding-left: 0;
-  padding-top: 18px;
   width: 64px;
   text-align: center;
+  gap: 2px;
 }
 
 .scale-horizontal .scale-tick-mark {
+  position: absolute;
   left: 50%;
-  top: 0;
+  top: -12px;
   transform: translateX(-50%);
   width: 2px;
-  height: 14px;
+  height: 10px;
 }
 
 .scale-horizontal .scale-tick.endpoint .scale-tick-mark {
   width: 3px;
-  height: 18px;
+  height: 14px;
+  top: -14px;
 }
 
 .scale-horizontal .scale-tick-name {
@@ -882,10 +895,15 @@ html, body {
 }
 
 .scale-horizontal .scale-me {
-  top: 50%;
+  top: calc(50% - 10px);
   left: auto;
-  transform: translate(-50%, -120%);
+  transform: translateX(-50%);
   flex-direction: column;
+  align-items: center;
+}
+
+.scale-horizontal .scale-me-dot {
+  position: static;
 }
 
 .scale-view,
@@ -1501,38 +1519,49 @@ html, body {
   transform: translateX(-50%);
 }
 
+/* Portrait: names to the RIGHT of ticks */
 .river-vertical .river-tick {
-  left: 50%;
+  left: calc(50% + 20px);
   right: auto;
-  transform: translate(-50%, -50%);
-  flex-direction: column;
+  transform: translateY(-50%);
+  flex-direction: row;
   align-items: center;
   padding-left: 0;
-  gap: 2px;
+  gap: 6px;
 }
 
 .river-vertical .river-tick-mark {
-  position: static;
-  font-size: 16px;
+  position: absolute;
+  left: -20px;
+  font-size: 14px;
 }
 
 .river-vertical .river-tick-name {
   font-size: 13px;
+  white-space: nowrap;
 }
 
 .river-vertical .river-tick-km {
   font-size: 10px;
+  white-space: nowrap;
 }
 
 .river-vertical .river-tick-desc {
   font-size: 9px;
+  white-space: nowrap;
 }
 
 .river-vertical .river-me {
-  left: 50%;
-  transform: translate(-50%, -50%);
-  flex-direction: column;
+  left: calc(50% + 20px);
+  transform: translateY(-50%);
+  flex-direction: row;
   align-items: center;
+  gap: 6px;
+}
+
+.river-vertical .river-me-dot {
+  position: absolute;
+  left: -27px;
 }
 
 /* Horizontal orientation (landscape) */
@@ -1567,26 +1596,27 @@ html, body {
   height: 10px;
 }
 
+/* Landscape: names BELOW the ticks */
 .river-horizontal .river-tick {
-  top: 50%;
+  top: calc(50% + 14px);
   left: auto;
   right: auto;
   bottom: auto;
-  transform: translate(-50%, 0);
+  transform: translateX(-50%);
   flex-direction: column;
   align-items: center;
   padding-left: 0;
-  padding-top: 20px;
   width: 72px;
   text-align: center;
   gap: 2px;
 }
 
 .river-horizontal .river-tick-mark {
-  left: 50%;
-  top: 0;
-  transform: translateX(-50%);
   position: absolute;
+  left: 50%;
+  top: -14px;
+  transform: translateX(-50%);
+  font-size: 12px;
 }
 
 .river-horizontal .river-tick-name {
@@ -1598,10 +1628,15 @@ html, body {
 }
 
 .river-horizontal .river-me {
-  top: 50%;
+  top: calc(50% - 10px);
   left: auto;
-  transform: translate(-50%, -120%);
+  transform: translateX(-50%);
   flex-direction: column;
+  align-items: center;
+}
+
+.river-horizontal .river-me-dot {
+  position: static;
 }
 
 .river-view,
