@@ -17,6 +17,10 @@ import {
   type LineProjection,
 } from './geo.ts'
 import { createScaleView } from './scaleView.ts'
+import { createElevationView, type ElevationProfileData } from './elevationView.ts'
+import { createRiverView, type RiverData } from './riverView.ts'
+import { initStayLog, updateStayLog } from './stayLog.ts'
+import { createStayView } from './stayView.ts'
 
 interface StationProperties {
   name: string
@@ -46,7 +50,7 @@ interface GeoJSONData {
   features: GeoJSONFeature[]
 }
 
-type AppView = 'map' | 'scale'
+type AppView = 'map' | 'scale' | 'elevation' | 'river' | 'stay'
 
 const app = document.querySelector<HTMLDivElement>('#app')!
 app.innerHTML = `
@@ -60,6 +64,9 @@ app.innerHTML = `
         <div class="view-toggle" role="group" aria-label="视图切换">
           <button type="button" id="view-map-btn" class="view-toggle-btn active" aria-pressed="true">地图</button>
           <button type="button" id="view-scale-btn" class="view-toggle-btn" aria-pressed="false">站序</button>
+          <button type="button" id="view-elev-btn" class="view-toggle-btn" aria-pressed="false">海拔</button>
+          <button type="button" id="view-river-btn" class="view-toggle-btn" aria-pressed="false">河流</button>
+          <button type="button" id="view-stay-btn" class="view-toggle-btn" aria-pressed="false">停留</button>
         </div>
         <button id="fit-line-btn" title="显示全线">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -78,6 +85,9 @@ app.innerHTML = `
     </header>
     <div id="map"></div>
     <div id="scale-view" class="scale-view hidden" aria-label="宝成线站序刻度"></div>
+    <div id="elevation-view" class="elevation-view hidden" aria-label="宝成线海拔剖面"></div>
+    <div id="river-view" class="river-view hidden" aria-label="宝成线沿线河流"></div>
+    <div id="stay-view" class="stay-view hidden" aria-label="宝成线停留记录"></div>
     <button id="locate-btn" class="locate-btn" title="定位 / 跟随我" type="button" aria-pressed="false">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
         <circle cx="12" cy="12" r="3"/>
@@ -171,6 +181,10 @@ let currentView: AppView = 'map'
 let locateCtrl: ReturnType<typeof createLocateControl> | null = null
 
 const scaleView = createScaleView(document.getElementById('scale-view')!)
+const elevationView = createElevationView(document.getElementById('elevation-view')!)
+const riverView = createRiverView(document.getElementById('river-view')!)
+const stayView = createStayView(document.getElementById('stay-view')!)
+initStayLog()
 const locationStatusCoords = document.getElementById('location-status-coords')!
 const locationStatusCorridor = document.getElementById('location-status-corridor')!
 const locationStatusEl = document.getElementById('location-status')!
@@ -205,20 +219,29 @@ function updateLocationStatus(proj: LineProjection | null, pos: LocatePosition |
   }
 }
 
-function applyLocationToScale(pos: LocatePosition | null) {
+function applyLocationToViews(pos: LocatePosition | null) {
   if (!pos || corridor.length < 2 || lineSegs.length === 0) {
     scaleView.setHasLocation(false)
     scaleView.setProjection(null)
+    elevationView.setHasLocation(false)
+    elevationView.setProjection(null)
+    riverView.setHasLocation(false)
+    riverView.setProjection(null)
+    updateStayLog(null, corridor)
+    stayView.refresh()
     updateLocationStatus(null, pos)
     return
   }
-  const proj = projectOntoCorridor(
-    { lat: pos.lat, lon: pos.lng },
-    corridor,
-    lineSegs
-  )
+  const gps = { lat: pos.lat, lon: pos.lng }
+  const proj = projectOntoCorridor(gps, corridor, lineSegs)
   scaleView.setHasLocation(true)
   scaleView.setProjection(proj)
+  elevationView.setHasLocation(true)
+  elevationView.setProjection(proj)
+  riverView.setHasLocation(true)
+  riverView.setProjection(proj)
+  updateStayLog(gps, corridor)
+  stayView.refresh()
   updateLocationStatus(proj, pos)
 }
 
@@ -268,10 +291,35 @@ async function loadData() {
     handleDeepLink()
 
     if (locateCtrl) {
-      applyLocationToScale(locateCtrl.getLastPosition())
+      applyLocationToViews(locateCtrl.getLastPosition())
     }
+    
+    loadElevationProfile()
+    loadRiverData()
   } catch (error) {
     console.error('加载数据失败:', error)
+  }
+}
+
+async function loadElevationProfile() {
+  try {
+    const response = await fetch(resolveAssetUrl('elevation-profile.json'))
+    const data: ElevationProfileData = await response.json()
+    elevationView.setData(data)
+    console.log(`Elevation profile loaded: ${data.summary.profilePoints} points, ${data.summary.minElevation}m - ${data.summary.maxElevation}m`)
+  } catch (error) {
+    console.error('加载海拔数据失败:', error)
+  }
+}
+
+async function loadRiverData() {
+  try {
+    const response = await fetch(resolveAssetUrl('rivers.json'))
+    const data: RiverData = await response.json()
+    riverView.setData(data)
+    console.log(`River data loaded: ${data.summary.riverCount} river crossings, ${data.summary.uniqueRivers} unique rivers`)
+  } catch (error) {
+    console.error('加载河流数据失败:', error)
   }
 }
 
@@ -433,20 +481,31 @@ function setView(view: AppView) {
   currentView = view
   const mapBtn = document.getElementById('view-map-btn')!
   const scaleBtn = document.getElementById('view-scale-btn')!
+  const elevBtn = document.getElementById('view-elev-btn')!
+  const riverBtn = document.getElementById('view-river-btn')!
+  const stayBtn = document.getElementById('view-stay-btn')!
   const fitBtn = document.getElementById('fit-line-btn')!
   const mapEl = document.getElementById('map')!
-  const isMap = view === 'map'
 
-  mapBtn.classList.toggle('active', isMap)
-  scaleBtn.classList.toggle('active', !isMap)
-  mapBtn.setAttribute('aria-pressed', isMap ? 'true' : 'false')
-  scaleBtn.setAttribute('aria-pressed', isMap ? 'false' : 'true')
+  mapBtn.classList.toggle('active', view === 'map')
+  scaleBtn.classList.toggle('active', view === 'scale')
+  elevBtn.classList.toggle('active', view === 'elevation')
+  riverBtn.classList.toggle('active', view === 'river')
+  stayBtn.classList.toggle('active', view === 'stay')
+  mapBtn.setAttribute('aria-pressed', view === 'map' ? 'true' : 'false')
+  scaleBtn.setAttribute('aria-pressed', view === 'scale' ? 'true' : 'false')
+  elevBtn.setAttribute('aria-pressed', view === 'elevation' ? 'true' : 'false')
+  riverBtn.setAttribute('aria-pressed', view === 'river' ? 'true' : 'false')
+  stayBtn.setAttribute('aria-pressed', view === 'stay' ? 'true' : 'false')
 
-  mapEl.classList.toggle('hidden-view', !isMap)
-  scaleView.setVisible(!isMap)
-  fitBtn.classList.toggle('hidden', !isMap)
+  mapEl.classList.toggle('hidden-view', view !== 'map')
+  scaleView.setVisible(view === 'scale')
+  elevationView.setVisible(view === 'elevation')
+  riverView.setVisible(view === 'river')
+  stayView.setVisible(view === 'stay')
+  fitBtn.classList.toggle('hidden', view !== 'map')
 
-  if (isMap) {
+  if (view === 'map') {
     requestAnimationFrame(() => map.invalidateSize())
   } else {
     hidePopup()
@@ -465,6 +524,9 @@ function setupControls() {
 
   document.getElementById('view-map-btn')!.addEventListener('click', () => setView('map'))
   document.getElementById('view-scale-btn')!.addEventListener('click', () => setView('scale'))
+  document.getElementById('view-elev-btn')!.addEventListener('click', () => setView('elevation'))
+  document.getElementById('view-river-btn')!.addEventListener('click', () => setView('river'))
+  document.getElementById('view-stay-btn')!.addEventListener('click', () => setView('stay'))
 
   const locateBtn = document.getElementById('locate-btn') as HTMLButtonElement
   const locateLabel = document.getElementById('locate-label')!
@@ -472,7 +534,7 @@ function setupControls() {
     button: locateBtn,
     label: locateLabel,
     toast: showToast,
-    onPosition: applyLocationToScale,
+    onPosition: applyLocationToViews,
   })
   locateBtn.addEventListener('click', () => {
     locateCtrl!.toggle().catch((e) => {
@@ -485,6 +547,24 @@ function setupControls() {
     if (t.id === 'scale-locate-prompt' || t.closest('#scale-locate-prompt')) {
       locateCtrl!.toggle().catch((err) => {
         console.error('[Main] Scale locate toggle failed:', err)
+      })
+    }
+  })
+
+  document.getElementById('elevation-view')!.addEventListener('click', (e) => {
+    const t = e.target as HTMLElement
+    if (t.id === 'elev-locate-prompt' || t.closest('#elev-locate-prompt')) {
+      locateCtrl!.toggle().catch((err) => {
+        console.error('[Main] Elevation locate toggle failed:', err)
+      })
+    }
+  })
+
+  document.getElementById('river-view')!.addEventListener('click', (e) => {
+    const t = e.target as HTMLElement
+    if (t.id === 'river-locate-prompt' || t.closest('#river-locate-prompt')) {
+      locateCtrl!.toggle().catch((err) => {
+        console.error('[Main] River locate toggle failed:', err)
       })
     }
   })

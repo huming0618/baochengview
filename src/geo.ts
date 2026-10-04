@@ -132,7 +132,8 @@ export function buildCorridor(stations: Station[]): CorridorStation[] {
   return out
 }
 
-const AT_STATION_M = 400
+/** Arrival radius used by corridor projection and stay-log start. */
+export const AT_STATION_M = 400
 
 /**
  * Project GPS onto the railway polyline, then infer which two stations

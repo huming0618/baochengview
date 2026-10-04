@@ -27,9 +27,7 @@ export function createScaleView(root: HTMLElement): ScaleViewController {
   let hasLocation = false
   let visible = false
   let orientation: ScaleOrientation =
-    window.matchMedia('(orientation: landscape) and (max-height: 520px)').matches
-      ? 'horizontal'
-      : 'vertical'
+    window.innerWidth > window.innerHeight ? 'horizontal' : 'vertical'
 
   root.innerHTML = `
     <div class="scale-shell">
@@ -179,9 +177,7 @@ export function createScaleView(root: HTMLElement): ScaleViewController {
 
   const onResize = () => {
     const next: ScaleOrientation =
-      window.matchMedia('(orientation: landscape) and (max-height: 520px)').matches
-        ? 'horizontal'
-        : 'vertical'
+      window.innerWidth > window.innerHeight ? 'horizontal' : 'vertical'
     if (next !== orientation) {
       orientation = next
       render()
@@ -191,6 +187,7 @@ export function createScaleView(root: HTMLElement): ScaleViewController {
     }
   }
   window.addEventListener('resize', onResize)
+  window.addEventListener('orientationchange', onResize)
 
   applyOrientation()
 
@@ -216,6 +213,7 @@ export function createScaleView(root: HTMLElement): ScaleViewController {
     getOrientation: () => orientation,
     destroy() {
       window.removeEventListener('resize', onResize)
+      window.removeEventListener('orientationchange', onResize)
       root.innerHTML = ''
     },
   }
