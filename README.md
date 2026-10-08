@@ -12,6 +12,7 @@
 - 🈶 内置中文字体子集（Android WebView 无系统 CJK 时仍可显示）
 - 📍 实时定位 / 跟随（蓝点 + 精度圈；首次点击「定位」时请求权限）
 - 📏 站序/刻度视图：沿线车站按里程排列，GPS 投影到线路后显示「你在 X ↔ Y 之间」
+- 📈 海拔剖面视图：宝成线全线海拔变化图，显示秦岭穿越的山岳地形特征；定位后显示「我」的位置
 
 ## 运行
 
@@ -52,6 +53,23 @@ cd android && ./gradlew assembleDebug
 车站与线路数据来自 [OpenStreetMap](https://www.openstreetmap.org/)，基于 OSM 关系 [1912130](https://www.openstreetmap.org/relation/1912130)（宝成线）。
 
 数据已预先提取为静态 GeoJSON（`public/baocheng.geojson`），无需运行时 API 调用。
+
+### 海拔数据
+
+海拔剖面数据来自 [Open-Meteo Elevation API](https://open-meteo.com/en/docs/elevation-api)，基于 SRTM 90m 数字高程模型。
+
+- 数据文件：`public/elevation-profile.json`
+- 采样方式：沿走廊每 1.5 km 采样一个点，投影到实际轨道 MultiLineString 上再查询海拔
+- 里程体系：与定位投影一致（站间直线距离插值），确保「我」标记在站序视图和海拔视图位置相同
+- 全线约 546 km，海拔范围约 462m（成都平原）至 1330m（秦岭山区）
+- 数据随代码提交，应用可完全离线工作
+
+**坡度平滑**：显示坡度上限为 30‰（与宝成正线限制坡度一致）。SRTM 90m 在秦岭山区的分辨率限制会产生噪声，原始数据中部分相邻采样点会显示 50–250‰ 的不可能坡度；这些点使用邻近采样值迭代平滑处理（已在数据中标记 `smoothed: true`）。
+
+重新生成海拔数据：
+```bash
+node scripts/generate-elevation-profile.cjs
+```
 
 ### 车站列表（北→南）
 
